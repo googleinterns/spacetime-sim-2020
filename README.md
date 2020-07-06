@@ -21,73 +21,60 @@ The instructions will guide the user to install SUMO and rllib which are importa
 
 # Files in this Repo
 The files located in the directory Gilbert_code correspond to the edited files from the FLOW source code needed to implement our traffic light optimization methods and experiment. These files are located in different places within the FLOW source code.
-##  Description of Files and Functionality + How to Run
-### In the root directory:
-- #####  copy_to_dir.sh
+#  Description of Files and Functionality + How to Run
+## In the root directory:
+- ####  copy_to_dir.sh
    This is scripts copies all the necessary files/code from FLOW source code into Gilbert_code in order to keep track of the changes made.
-- ##### copy_from_dir.sh: [NOT implemented yet]
+- #### copy_from_dir.sh: [NOT implemented yet]
     This is scripts copies all the necessary files/code from Gilbert_code into into FLOW source code in order to run.
 
-### In Gilbert_code directory:
-Single_agent directory:
-- ##### traffic_light_grid.py
-    Source Location: edited from ~/flow/flow/envs
-    
+## In Gilbert_code directory:
+### Single_agent directory:
+- #### traffic_light_grid.py
+    Source Location: edited from ~/flow/flow/envs\
     Contains gym environment for a 1x1 single intersection experiment. The class called MyGridEnv has all the implemented methods that set the obersavation and action spaces, collects states, computes rewards, and logs rewards and travel time on tensoboard.
-- ##### __init__.py 
-    Source Location: edited from ~/flow/flow/envs
-    
+- #### __init__.py 
+    Source Location: edited from ~/flow/flow/envs\
     Registers the created environments for FLOW to use
-- ##### grid1x1.py
-    Source Location: edited from ~/flow/examples/exp_configs/non_rl
-    
+- #### grid1x1.py
+    Source Location: edited from ~/flow/examples/exp_configs/non_rl\
     Sets parameters for single intersection non-rl experiment. Traffic light control can either be SUMO inbuilt policies or pre-assigned phases timing plans. To run this file, in the flow/examples directory, run:
     ###### $ python simulatate.py grid1x1
 
-- ##### grid1x1_rl.py 
-    Source Location: edited from ~/flow/examples/exp_configs/rl
-    
+- #### grid1x1_rl.py 
+    Source Location: edited from ~/flow/examples/exp_configs/rl\
     Sets parameters for single intersection rl experiment. Traffic light control can either be SUMO inbuilt policies or pre-assigned phases timing plans. To run this file, in the ~/flow/examples directory, run:
     ###### $ python train.py grid1x1_rl
-
-Multi_agent directory:
-- #####  traffic_light_grid.py 
-    Source Location: edited from ~/flow/flow/envs/multiagent
     
+### Multi_agent directory:
+- ####  traffic_light_grid.py 
+    Source Location: edited from ~/flow/flow/envs/multiagent\
     Contains gym environment for a 1x3 and 2x2 intersection experiments. The class called MultiTrafficLightGridPOEnvPL has all the implemented methods that set the obersavation and action spaces, collects states, computes rewards, and logs rewards and travel time on tensoboard.
-- #####  __init__.py Source Location: 
-    Source Location: edited from ~/flow/flow/envs/multiagent
-    
+- ####  __init__.py Source Location: 
+    Source Location: edited from ~/flow/flow/envs/multiagent\
     Registers the created environments for FLOW to use
-- #####  grid1x3.py 
-    Source Location: edited from ~/flow/examples/exp_configs/non_rl
-    
-    similar purpose to grid1x1 above but for 1x3 multi-agent scenario, to run this file, in the flow/examples directory, run:
+- ####  grid1x3.py 
+    Source Location: edited from ~/flow/examples/exp_configs/non_rl\
+    Similar purpose to grid1x1 above but for 1x3 multi-agent scenario, to run this file, in the flow/examples directory, run:
     ###### $ python simulatate.py grid1x3
-- #####  grid2x2.py 
-    Source Location: edited from ~/flow/examples/exp_configs/non_rl
-    
-    similar purpose to grid1x1 above but for 2x2 multi-agent scenario, to run this file, in the flow/examples directory, run:
+- ####  grid2x2.py 
+    Source Location: edited from ~/flow/examples/exp_configs/non_rl\
+    Similar purpose to grid1x1 above but for 2x2 multi-agent scenario, to run this file, in the flow/examples directory, run:
     ###### $ python simulatate.py grid2x2
-- #####  grid1x3_rl.py 
-    Source Location:  edited from ~/flow/examples/exp_configs/rl
-    
-    similar purpose to grid1x1_rl above but for 1x3 multi-agent scenario, to run this file, in the flow/examples directory, run:
+- ####  grid1x3_rl.py 
+    Source Location:  edited from ~/flow/examples/exp_configs/rl\
+    Similar purpose to grid1x1_rl above but for 1x3 multi-agent scenario, to run this file, in the flow/examples directory, run:
     ###### $ python simulatate.py grid1x3_rl
-- #####  grid2x2_rl.py 
-    Source Location: edited from ~/flow/examples/exp_configs/rl
-    
-    similar purpose to grid1x1_rl above but for 2x2 multi-agent scenario, to run this file, in the flow/examples directory, run:
+- ####  grid2x2_rl.py \
+    Similar purpose to grid1x1_rl above but for 2x2 multi-agent scenario, to run this file, in the flow/examples directory, run:
     ###### $ python simulatate.py grid2x2_rl
 
-utils_and_source_code_edits directory:
-- #####  util.py 
-    Source Location: edited from ~/flow/flow/core
-    
+### utils_and_source_code_edits directory:
+- ####  util.py 
+    Source Location: edited from ~/flow/flow/core\
     This file contains code/methods that are shared amongst environemnts such as logging ot travel times.
-- ##### traci.py 
-    Source Location: edited from ~/flow/flow/core/kernel/simulation
-    
+- #### traci.py 
+    Source Location: edited from ~/flow/flow/core/kernel/simulation\
     This file contains code/methods that are shared amongst environemnts but are deeper into FLOW source code. The lines of interest are 119 to 122. These lines enable SUMO to output an xml containing trip_infos that we collect travel times from.
 
 ## Visualizing trained RL policies
