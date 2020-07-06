@@ -18,7 +18,7 @@ In the project, we are implement two Traffic Light Optimization Baselines:
 # Installation
 In order to begin implementing the code, the user needs to install FLOW in their home directory (user root directory). Please follow the instructions provided in (https://github.com/flow-project/flow) to install and begin using FLOW.
 The instructions will guide the user to install SUMO and rllib which are important pieces of the project too.\
-Ensure the "spacetime-sim-2020" repo is cloned in the ~/flow directory
+Ensure the "spacetime-sim-2020" repo is cloned in the home directory (user root directory) too.
 
 # Files in this Repo
 The files located in the directory Gilbert_code correspond to the edited files from the FLOW source code needed to implement our traffic light optimization methods and experiment. These files are located in different places within the FLOW source code.
@@ -26,7 +26,7 @@ The files located in the directory Gilbert_code correspond to the edited files f
 ## In the root directory:
 - ####  copy_to_dir.sh
    This is scripts copies all the necessary files/code from FLOW source code into Gilbert_code in order to keep track of the changes made.
-- #### copy_from_dir.sh: [NOT implemented yet]
+- #### copy_from_dir.sh:
     This is scripts copies all the necessary files/code from Gilbert_code into into FLOW source code in order to run.
 
 ## In Gilbert_code directory:

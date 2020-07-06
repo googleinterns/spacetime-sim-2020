@@ -856,7 +856,7 @@ class MyGridEnv(TrafficLightGridPOEnv):
 
             # for each incoming edge, log the  ids
             observed_ids = \
-                self.get_id_within_look_ahead2(incoming)
+                self.get_id_within_look_ahead(incoming)
             all_observed_ids_ahead += observed_ids
 
             # after knowing the outgoing edges, log the observed ids
@@ -867,7 +867,7 @@ class MyGridEnv(TrafficLightGridPOEnv):
             edge_pressure = [len(observed_ids) - len(observed_ids_behind)]
             # if edge_pressure > 0:
             #     print("here")
-            rl_obs[rl_id] = edge_pressure
+            # rl_obs[rl_id] = edge_pressure
 
             for edge in edges:
 
