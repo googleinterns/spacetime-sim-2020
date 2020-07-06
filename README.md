@@ -31,51 +31,63 @@ The files located in the directory Gilbert_code correspond to the edited files f
 ### In Gilbert_code directory:
 Single_agent directory:
 - ##### traffic_light_grid.py
-    From where: edited from ~/flow/flow/envs
+    Source Location: edited from ~/flow/flow/envs
+    
     Contains gym environment for a 1x1 single intersection experiment. The class called MyGridEnv has all the implemented methods that set the obersavation and action spaces, collects states, computes rewards, and logs rewards and travel time on tensoboard.
 - ##### __init__.py 
-    From where: edited from ~/flow/flow/envs
+    Source Location: edited from ~/flow/flow/envs
+    
     Registers the created environments for FLOW to use
 - ##### grid1x1.py
-    From where: edited from ~/flow/examples/exp_configs/non_rl
+    Source Location: edited from ~/flow/examples/exp_configs/non_rl
+    
     Sets parameters for single intersection non-rl experiment. Traffic light control can either be SUMO inbuilt policies or pre-assigned phases timing plans. To run this file, in the flow/examples directory, run:
     ###### $ python simulatate.py grid1x1
 
 - ##### grid1x1_rl.py 
-    From where: edited from ~/flow/examples/exp_configs/rl
+    Source Location: edited from ~/flow/examples/exp_configs/rl
+    
     Sets parameters for single intersection rl experiment. Traffic light control can either be SUMO inbuilt policies or pre-assigned phases timing plans. To run this file, in the ~/flow/examples directory, run:
     ###### $ python train.py grid1x1_rl
 
 Multi_agent directory:
 - #####  traffic_light_grid.py 
-    From where: edited from ~/flow/flow/envs/multiagent
+    Source Location: edited from ~/flow/flow/envs/multiagent
+    
     Contains gym environment for a 1x3 and 2x2 intersection experiments. The class called MultiTrafficLightGridPOEnvPL has all the implemented methods that set the obersavation and action spaces, collects states, computes rewards, and logs rewards and travel time on tensoboard.
-- #####  __init__.py From where: 
-    From where: edited from ~/flow/flow/envs/multiagent
+- #####  __init__.py Source Location: 
+    Source Location: edited from ~/flow/flow/envs/multiagent
+    
     Registers the created environments for FLOW to use
 - #####  grid1x3.py 
-    From where: edited from ~/flow/examples/exp_configs/non_rl
+    Source Location: edited from ~/flow/examples/exp_configs/non_rl
+    
     similar purpose to grid1x1 above but for 1x3 multi-agent scenario, to run this file, in the flow/examples directory, run:
     ###### $ python simulatate.py grid1x3
 - #####  grid2x2.py 
-    From where: edited from ~/flow/examples/exp_configs/non_rl
+    Source Location: edited from ~/flow/examples/exp_configs/non_rl
+    
     similar purpose to grid1x1 above but for 2x2 multi-agent scenario, to run this file, in the flow/examples directory, run:
     ###### $ python simulatate.py grid2x2
 - #####  grid1x3_rl.py 
-    From where:  edited from ~/flow/examples/exp_configs/rl
+    Source Location:  edited from ~/flow/examples/exp_configs/rl
+    
     similar purpose to grid1x1_rl above but for 1x3 multi-agent scenario, to run this file, in the flow/examples directory, run:
     ###### $ python simulatate.py grid1x3_rl
 - #####  grid2x2_rl.py 
-    From where: edited from ~/flow/examples/exp_configs/rl
+    Source Location: edited from ~/flow/examples/exp_configs/rl
+    
     similar purpose to grid1x1_rl above but for 2x2 multi-agent scenario, to run this file, in the flow/examples directory, run:
     ###### $ python simulatate.py grid2x2_rl
 
 utils_and_source_code_edits directory:
 - #####  util.py 
-    From where: edited from ~/flow/flow/core
+    Source Location: edited from ~/flow/flow/core
+    
     This file contains code/methods that are shared amongst environemnts such as logging ot travel times.
 - ##### traci.py 
-    From where: edited from ~/flow/flow/core/kernel/simulation
+    Source Location: edited from ~/flow/flow/core/kernel/simulation
+    
     This file contains code/methods that are shared amongst environemnts but are deeper into FLOW source code. The lines of interest are 119 to 122. These lines enable SUMO to output an xml containing trip_infos that we collect travel times from.
 
 ## Visualizing trained RL policies
