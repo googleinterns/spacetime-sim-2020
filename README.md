@@ -7,7 +7,7 @@ FLOW (https://flow-project.github.io/)  was developed by the Mobile Sensing Labo
 SUMO (https://sumo.dlr.de/docs/index.html) is an open source, highly portable, microscopic and continuous traffic simulation package designed to handle large networks. 
 
 # Baselines Implemented
-In the Project, we are implement 2 Traffic Light Optimization Baselines:
+In the project, we are implement two Traffic Light Optimization Baselines:
 - PressLight: Learning Max Pressure Control to Coordinate Traffic Signals in Arterial Network
     - https://dl.acm.org/doi/10.1145/3292500.3330949
     - https://github.com/wingsweihua/presslight
