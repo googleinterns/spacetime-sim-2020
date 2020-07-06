@@ -9,11 +9,11 @@ SUMO (https://sumo.dlr.de/docs/index.html) is an open source, highly portable, m
 # Baselines Implemented
 In the Project, we are implement 2 Traffic Light Optimization Baselines:
 1.PressLight: Learning Max Pressure Control to Coordinate Traffic Signals in Arterial Network
-https://dl.acm.org/doi/10.1145/3292500.3330949
-https://github.com/wingsweihua/presslight
+- https://dl.acm.org/doi/10.1145/3292500.3330949
+- https://github.com/wingsweihua/presslight
 
 2.Coordinated Deep Reinforcement Learners for Traffic Light Control 
-https://esc.fnwi.uva.nl/thesis/centraal/files/f632158773.pdf
+- https://esc.fnwi.uva.nl/thesis/centraal/files/f632158773.pdf
 
 # Installation
 In order to begin implementing the code, the user needs to install FLOW in their home directory (user root directory). Please follow the instructions provided in https://github.com/flow-project/flow to install and begin using FLOW.
