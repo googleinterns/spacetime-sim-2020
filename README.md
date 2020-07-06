@@ -55,18 +55,18 @@ The files located in the directory Gilbert_code correspond to the edited files f
     Registers the created environments for FLOW to use
 - ####  grid1x3.py 
     Source Location: edited from ~/flow/examples/exp_configs/non_rl\
-    Similar purpose to grid1x1 above but for 1x3 multi-agent scenario, to run this file, in the flow/examples directory, run:
+    Similar purpose to grid1x1 above but for 1x3 multi-agent scenario, to run this file, in the ~/flow/examples directory, run:
     ###### $ python simulate.py grid1x3
 - ####  grid2x2.py 
     Source Location: edited from ~/flow/examples/exp_configs/non_rl\
-    Similar purpose to grid1x1 above but for 2x2 multi-agent scenario, to run this file, in the flow/examples directory, run:
+    Similar purpose to grid1x1 above but for 2x2 multi-agent scenario, to run this file, in the ~/flow/examples directory, run:
     ###### $ python simulate.py  grid2x2
 - ####  grid1x3_rl.py 
     Source Location:  edited from ~/flow/examples/exp_configs/rl\
-    Similar purpose to grid1x1_rl above but for 1x3 multi-agent scenario, to run this file, in the flow/examples directory, run:
+    Similar purpose to grid1x1_rl above but for 1x3 multi-agent scenario, to run this file, in the ~/flow/examples directory, run:
     ###### $ python simulate.py  grid1x3_rl
 - ####  grid2x2_rl.py \
-    Similar purpose to grid1x1_rl above but for 2x2 multi-agent scenario, to run this file, in the flow/examples directory, run:
+    Similar purpose to grid1x1_rl above but for 2x2 multi-agent scenario, to run this file, in the ~/flow/examples directory, run:
     ###### $ python simulate.py  grid2x2_rl
 
 ### utils_and_source_code_edits directory:
@@ -78,7 +78,7 @@ The files located in the directory Gilbert_code correspond to the edited files f
     This file contains code/methods that are shared amongst environments but are deeper into FLOW source code. The lines of interest are 119 to 122. These lines enable SUMO to output an xml containing trip infos that we collect travel times from.
 
 ## Visualizing trained RL policies
-In order to visualize the policies, from in the ~/flow/flow/visualize run:
+In order to visualize the policies, from the ~/flow/flow/visualize directory, run:
 ###### $ python visualizer_rllib.py --result_dir "result_dir here" --checkpoint_num "checkpoint_num here"
 where "checkpoint_num here" and "result_dir here" correspond to the checkpoint number we are trying to visualize and the directory containing the trained policy respectively.
 
