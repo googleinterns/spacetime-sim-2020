@@ -827,6 +827,7 @@ class MyGridEnv(TrafficLightGridPOEnv):
         speeds = []
         dist_to_intersec = []
         edge_number = []
+        observed_ids_behind = []
         max_speed = max(
             self.k.network.speed_limit(edge)
             for edge in self.k.network.get_edge_list())
@@ -847,27 +848,30 @@ class MyGridEnv(TrafficLightGridPOEnv):
             for edge_ in incoming:
                 if self.k.network.rts[edge_]:
                     index_ = self.k.network.rts[edge_][0][0].index(edge_)
-                    outgoing += [self.k.network.rts[edge_][0][0][index_+1]]
-                else:
-                    for lst in internal_edges:
-                        if len(lst) > 1 and edge_ in lst:
-                            index_ = lst.index(edge_)
-                            outgoing += [lst[index_ + 1]]
+                    # for each incoming edge, log the  ids
+                    observed_ids = \
+                        self.get_id_within_look_ahead(edge_)
+                    all_observed_ids_ahead += observed_ids
+                    outgoing = self.k.network.rts[edge_][0][0][index_+1]
+                    observed_ids_behind = self.get_id_within_look_behind(outgoing)
 
-            # for each incoming edge, log the  ids
-            observed_ids = \
-                self.get_id_within_look_ahead(incoming)
-            all_observed_ids_ahead += observed_ids
+                edge_pressure += [len(observed_ids) - len(observed_ids_behind)]
 
-            # after knowing the outgoing edges, log the observed ids
-            observed_ids_behind = self.get_id_within_look_behind(outgoing)
+            # # for each incoming edge, log the  ids
+            # observed_ids = \
+            #     self.get_id_within_look_ahead(incoming)
+            # all_observed_ids_ahead += observed_ids
+            #
+            # # after knowing the outgoing edges, log the observed ids
+            # observed_ids_behind = self.get_id_within_look_behind(outgoing)
 
             # check which edges we have so we can always pad in the right
             # positions
-            edge_pressure = [len(observed_ids) - len(observed_ids_behind)]
+            # edge_pressure = [len(observed_ids) - len(observed_ids_behind)]
             # if edge_pressure > 0:
             #     print("here")
             # rl_obs[rl_id] = edge_pressure
+            print(edge_pressure)
 
             for edge in edges:
 
@@ -969,7 +973,13 @@ class MyGridEnv(TrafficLightGridPOEnv):
         else:
             return False
 
-    def get_id_within_look_behind(self, outgoing=None):
+    def get_id_within_look_behind(self, edges):
+        ids_ = filter(self.is_within_look_behind, self.k.vehicle.get_ids_by_edge(edges))
+        for veh_id in list(ids_):
+            self.k.vehicle.set_color(veh_id=veh_id, color=RED)
+        return list(ids_)
+
+    def get_id_within_look_behind2(self, outgoing=None):
         """TODO: args and output document"""
         traffic_light_obs = dict()
         ids_ = []
@@ -978,6 +988,7 @@ class MyGridEnv(TrafficLightGridPOEnv):
             ids_in_scope_list = list(ids_in_scope)
             traffic_light_obs[opposite_edge] = ids_in_scope_list
             ids_ = ids_ + ids_in_scope_list
+
 
         for veh_id in list(ids_):
             self.k.vehicle.set_color(veh_id=veh_id, color=RED)

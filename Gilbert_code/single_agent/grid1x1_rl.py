@@ -40,7 +40,7 @@ CYAN = (0, 255, 255)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 
-USE_INFLOWS = True
+USE_INFLOWS = False
 ADDITIONAL_ENV_PARAMS = {
         'target_velocity': speed_lim,
         'switch_time': 3.0, # min switch time
@@ -54,10 +54,10 @@ long_length = 240
 short_length = 240
 n_rows = 1
 n_columns = 1
-num_cars_left = 20 #up
-num_cars_right = 20 #bottom
-num_cars_top = 20 #right
-num_cars_bot = 20#left
+num_cars_left = 5 #up
+num_cars_right = 5 #bottom
+num_cars_top = 5 #right
+num_cars_bot = 5 #left
 tot_cars = (num_cars_left + num_cars_right) * n_columns \
            + (num_cars_top + num_cars_bot) * n_rows
 
