@@ -31,11 +31,11 @@ if not os.path.exists(home_dir + '/ray_results/real_time_metrics'):
     os.makedirs(home_dir + '/ray_results/real_time_metrics')
 
 summaries_dir = home_dir + '/ray_results/real_time_metrics'
-log_rewards_during_iteration = False
+log_rewards_during_iteration = True
 
-# look_ahead = 80
+look_ahead = 80
 # log_title = '/simulation{}'.format("rl_80_L")
-# log_title = '/simulation{}'.format("rl_80_H")
+log_title = '/simulation_test{}'.format("rl_80_H")
 
 # look_ahead = 160
 # # log_title = '/simulation{}'.format("rl_160_L")
@@ -45,9 +45,9 @@ log_rewards_during_iteration = False
 # log_title = '/simulation{}'.format("rl_240_L")
 # log_title = '/simulation{}'.format("rl_240_H")
 #
-look_ahead = 80
-# log_title = '/simulation{}'.format("rl_43_L")
-log_title = '/simulation{}'.format("rl_43_H")
+# look_ahead = 43
+# # log_title = '/simulation{}'.format("rl_43_L")
+# log_title = '/simulation{}'.format("rl_43_H")
 
 
 RED = (255, 0, 0)

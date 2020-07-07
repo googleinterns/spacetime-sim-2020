@@ -20,3 +20,4 @@ cp ~/flow/examples/exp_configs/rl/multiagent/grid1x3_rl.py Gilbert_code/multi_ag
 #utils and source_code_edits
 cp ~/flow/flow/core/util.py Gilbert_code/utils_and_source_code_edits
 cp ~/flow/flow/core/kernel/simulation/traci.py Gilbert_code/utils_and_source_code_edits
+cp ~/flow/examples/train.py Gilbert_code/utils_and_source_code_edits
