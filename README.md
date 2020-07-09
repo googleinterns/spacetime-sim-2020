@@ -65,10 +65,10 @@ The files located in the directory Gilbert_code correspond to the edited files f
 - ####  grid1x3_rl.py 
     Source Location:  edited from ~/flow/examples/exp_configs/rl\
     Similar purpose to grid1x1_rl above but for 1x3 multi-agent scenario, to run this file, in the ~/flow/examples directory, run:
-    ###### $ python simulate.py  grid1x3_rl
+    ###### $ python train.py --exp_config  grid1x3_rl
 - ####  grid2x2_rl.py \
     Similar purpose to grid1x1_rl above but for 2x2 multi-agent scenario, to run this file, in the ~/flow/examples directory, run:
-    ###### $ python simulate.py  grid2x2_rl
+    ###### $ python train.py --exp_config grid2x2_rl
 
 ### utils_and_source_code_edits directory:
 - ####  util.py 
