@@ -318,7 +318,7 @@ class MultiTrafficLightGridPOEnvPL(TrafficLightGridPOEnv, MultiEnv):
         tl_box = Box(
             low=-np.inf,
             high=np.inf,
-            shape=(19,), # FIXME: hardcoded in for 1 x 3 traffic light
+            shape=(18,), # FIXME: hardcoded in for 1 x 3 traffic light
             dtype=np.float32)
         return tl_box
 
@@ -453,32 +453,42 @@ class MultiTrafficLightGridPOEnvPL(TrafficLightGridPOEnv, MultiEnv):
             incoming = local_edges
             outgoing = []
             all_observed_ids_ahead = []
+            edge_pressure = []
             for edge_ in incoming:
                 if self.k.network.rts[edge_]:
+                    # if edge is an outer(global) incoming edge, outgoing is the next edge in the route
                     index_ = self.k.network.rts[edge_][0][0].index(edge_)
-                    outgoing += [self.k.network.rts[edge_][0][0][index_ + 1]]
+                    outgoing = [self.k.network.rts[edge_][0][0][index_ + 1]]
                 else:
                     for lst in internal_edges:
+                        # if edge is an inner edges, outgoing is the next edge in the route
                         if len(lst) > 1 and edge_ in lst:
                             index_ = lst.index(edge_)
-                            outgoing += [lst[index_ + 1]]
+                            outgoing = [lst[index_ + 1]]
 
-            # for each incoming edge, log the  ids
-            observed_ids = \
-                self.get_id_within_look_ahead2(incoming)
-            all_observed_ids_ahead += observed_ids
+                # get ids in incoming edge
+                observed_ids = \
+                    self.get_id_within_look_ahead(edge_)
+                all_observed_ids_ahead += observed_ids
 
-            # after knowing the outgoing edges, log the observed ids
-            observed_ids_behind = self.get_id_within_look_behind(outgoing)
+                # get ids in outgoing edge
+                observed_ids_behind = self.get_id_within_look_behind(outgoing)
 
-            # check which edges we have so we can always pad in the right
-            # positions
-            edge_pressure = [len(observed_ids) - len(observed_ids_behind)]
-            self.edge_pressure_dict[rl_id] = len(observed_ids) - len(observed_ids_behind)
+                # get edge pressures
+                edge_pressure += [len(observed_ids) - len(observed_ids_behind)]
+
+                # color incoming and outgoing vehicles
+                self.color_vehicles(observed_ids, CYAN)
+                self.color_vehicles(observed_ids_behind, RED)
+                print(edge_pressure)
+                print(local_edge_numbers)
+
+            # for each incoming edge, store the pressure terms to be used in compute reward
+            self.edge_pressure_dict[rl_id] = edge_pressure
 
             observation = np.array(np.concatenate(
                 [edge_pressure,
-                 edge_number[rl_id_num],
+                 local_edge_numbers,
                  direction[local_id_nums],
                  currently_yellow[local_id_nums]
                  ]))
@@ -486,27 +496,15 @@ class MultiTrafficLightGridPOEnvPL(TrafficLightGridPOEnv, MultiEnv):
 
         return obs
 
+    def color_vehicles(self, ids, color):
+        for veh_id in ids:
+            self.k.vehicle.set_color(veh_id=veh_id, color=color)
+        return
+
     def get_id_within_look_ahead(self, edges):
         """ TODO: Merge methods with below and take to utils """
         ids_in_scope = filter(self.is_within_look_ahead, self.k.vehicle.get_ids_by_edge(edges))
         return list(ids_in_scope)
-
-    def get_id_within_look_ahead2(self, incoming):
-        """ TODO: Merge methods with above and take to utils """
-
-        traffic_light_obs = dict()
-        ids_ = []
-
-        for opposite_edge in incoming:
-            ids_in_scope = filter(self.is_within_look_ahead, self.k.vehicle.get_ids_by_edge(opposite_edge))
-            ids_in_scope_list = list(ids_in_scope)
-            traffic_light_obs[opposite_edge] = ids_in_scope_list
-            ids_ = ids_ + ids_in_scope_list
-
-        for veh_id in list(ids_):
-            self.k.vehicle.set_color(veh_id=veh_id, color=CYAN)
-
-        return list(ids_)
 
     def is_within_look_ahead(self, veh_id):
         """TODO: document args and put in parent class: method will go to flow/utils"""
@@ -515,19 +513,9 @@ class MultiTrafficLightGridPOEnvPL(TrafficLightGridPOEnv, MultiEnv):
         else:
             return False
 
-    def get_id_within_look_behind(self, outgoing=None):
-        """TODO: document args and put in parent class: method will go to flow/utils"""
-        traffic_light_obs = dict()
-        ids_ = []
-        for opposite_edge in outgoing:
-            ids_in_scope = filter(self.is_within_look_behind, self.k.vehicle.get_ids_by_edge(opposite_edge))
-            ids_in_scope_list = list(ids_in_scope)
-            traffic_light_obs[opposite_edge] = ids_in_scope_list
-            ids_ = ids_ + ids_in_scope_list
-
-        for veh_id in list(ids_):
-            self.k.vehicle.set_color(veh_id=veh_id, color=RED)
-        return ids_
+    def get_id_within_look_behind(self, edges):
+        ids_ = filter(self.is_within_look_behind, self.k.vehicle.get_ids_by_edge(edges))
+        return list(ids_)
 
     def is_within_look_behind(self, veh_id):
         """TODO: document args and put in parent class: method will go to flow/utils"""
@@ -596,7 +584,7 @@ class MultiTrafficLightGridPOEnvPL(TrafficLightGridPOEnv, MultiEnv):
         rews = {}
         for rl_id in rl_actions.keys():
             # get edge pressures
-            rews[rl_id] = self.edge_pressure_dict[rl_id]
+            rews[rl_id] = -sum(self.edge_pressure_dict[rl_id])
         return rews
 
     def additional_command(self):
