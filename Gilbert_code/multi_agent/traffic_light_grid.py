@@ -11,6 +11,41 @@ from gym.spaces.discrete import Discrete
 from flow.core import rewards
 from flow.envs.traffic_light_grid import TrafficLightGridPOEnv
 from flow.envs.multiagent import MultiEnv
+from flow.core.util import trip_info_emission_to_csv
+from tensorboardX import SummaryWriter
+import pandas as pd
+import time
+import os
+from datetime import datetime
+
+#######################################################
+########## Gilbert code below for Presslight ##########
+#######################################################
+now = datetime.now()
+current_time = now.strftime("%Y-%H-%M-%S")
+home_dir = os.path.expanduser('~')
+if not os.path.exists(home_dir + '/ray_results/real_time_metrics'):
+    os.makedirs(home_dir + '/ray_results/real_time_metrics')
+
+summaries_dir = home_dir + '/ray_results/real_time_metrics'
+log_rewards_during_iteration = False
+
+# choose look-ahead distance
+look_ahead = 80
+# look_ahead = 160
+# look_ahead = 240
+# look_ahead = 43
+
+# choose demand pattern
+demand = "L"
+# demand = "H"
+
+# choose exp running
+exp = "rl"
+# exp = "non_rl"
+
+#log title for tensorboard
+log_title = '/simulation_test_1x3_{}_{}_{}'.format(exp, look_ahead, demand)
 
 ADDITIONAL_ENV_PARAMS = {
     # num of nearby lights the agent can observe {0, ..., num_traffic_lights-1}
@@ -25,6 +60,11 @@ ID_IDX = 1
 RED = (255, 0, 0)
 BLUE =(0, 0, 255)
 CYAN = (0, 255, 255)
+
+#######################################################
+########## Gilbert code above for Presslight ##########
+#######################################################
+
 
 class MultiTrafficLightGridPOEnv(TrafficLightGridPOEnv, MultiEnv):
     """Multiagent shared model version of TrafficLightGridPOEnv.
@@ -59,6 +99,8 @@ class MultiTrafficLightGridPOEnv(TrafficLightGridPOEnv, MultiEnv):
         # number of nearest edges to observe, defaults to 4
         self.num_local_edges = env_params.additional_params.get(
             "num_local_edges", 4)
+
+        self.writer = SummaryWriter(summaries_dir + self.exp_name)
 
     @property
     def observation_space(self):
@@ -307,6 +349,13 @@ class MultiTrafficLightGridPOEnvPL(TrafficLightGridPOEnv, MultiEnv):
         self.num_local_edges = env_params.additional_params.get(
             "num_local_edges", 4)
 
+        # set up tensorboard logging info
+        self.exp_name = log_title
+        self.writer = SummaryWriter(summaries_dir + self.exp_name)
+        self.rew_list = []
+        # set look ahead distance
+        self.look_ahead = look_ahead
+
     @property
     def observation_space(self):
         """State space that is partially observed.
@@ -359,7 +408,6 @@ class MultiTrafficLightGridPOEnvPL(TrafficLightGridPOEnv, MultiEnv):
         # methods for observations, but remember to flatten for single-agent
 
         # Observed vehicle information
-        self.look_ahead = 80 # take to __init__
         speeds = []
         dist_to_intersec = []
         edge_number = []
@@ -480,8 +528,8 @@ class MultiTrafficLightGridPOEnvPL(TrafficLightGridPOEnv, MultiEnv):
                 # color incoming and outgoing vehicles
                 self.color_vehicles(observed_ids, CYAN)
                 self.color_vehicles(observed_ids_behind, RED)
-                print(edge_pressure)
-                print(local_edge_numbers)
+                # print(edge_pressure)
+                # print(local_edge_numbers)
 
             # for each incoming edge, store the pressure terms to be used in compute reward
             self.edge_pressure_dict[rl_id] = edge_pressure
@@ -536,8 +584,6 @@ class MultiTrafficLightGridPOEnvPL(TrafficLightGridPOEnv, MultiEnv):
             i = int(rl_id.split("center")[ID_IDX])
             if self.discrete:
                 action = rl_action
-                # print(action, rl_id)
-                # print("####")
             else:
                 # convert values less than 0.0 to zero and above to 1. 0's
                 # indicate that we should not switch the direction
@@ -571,16 +617,6 @@ class MultiTrafficLightGridPOEnvPL(TrafficLightGridPOEnv, MultiEnv):
         """See class definition."""
         if rl_actions is None:
             return {}
-
-        # if self.env_params.evaluate:
-        #     rew = -rewards.min_delay_unscaled(self)
-        # else:
-        #     rew = -rewards.min_delay_unscaled(self) \
-        #           + rewards.penalize_standstill(self, gain=0.2)
-        #
-        # # each agent receives reward normalized by number of lights
-        # rew /= self.num_traffic_lights
-
         rews = {}
         for rl_id in rl_actions.keys():
             # get edge pressures
@@ -593,3 +629,211 @@ class MultiTrafficLightGridPOEnvPL(TrafficLightGridPOEnv, MultiEnv):
         for veh_ids in self.observed_ids:
             for veh_id in veh_ids:
                 self.k.vehicle.set_observed(veh_id)
+
+    def step(self, rl_actions):
+        """Advance the environment by one step.
+
+        Assigns actions to autonomous and human-driven agents (i.e. vehicles,
+        traffic lights, etc...). Actions that are not assigned are left to the
+        control of the simulator. The actions are then used to advance the
+        simulator by the number of time steps requested per environment step.
+
+        Results from the simulations are processed through various classes,
+        such as the Vehicle and TrafficLight kernels, to produce standardized
+        methods for identifying specific network state features. Finally,
+        results from the simulator are used to generate appropriate
+        observations.
+
+        Parameters
+        ----------
+        rl_actions : array_like
+            an list of actions provided by the rl algorithm
+
+        Returns
+        -------
+        observation : dict of array_like
+            agent's observation of the current environment
+        reward : dict of floats
+            amount of reward associated with the previous state/action pair
+        done : dict of bool
+            indicates whether the episode has ended
+        info : dict
+            contains other diagnostic information from the previous action
+        """
+        for _ in range(self.env_params.sims_per_step):
+            self.time_counter += 1
+            self.step_counter += 1
+
+            # perform acceleration actions for controlled human-driven vehicles
+            if len(self.k.vehicle.get_controlled_ids()) > 0:
+                accel = []
+                for veh_id in self.k.vehicle.get_controlled_ids():
+                    accel_contr = self.k.vehicle.get_acc_controller(veh_id)
+                    action = accel_contr.get_action(self)
+                    accel.append(action)
+                self.k.vehicle.apply_acceleration(
+                    self.k.vehicle.get_controlled_ids(), accel)
+
+            # perform lane change actions for controlled human-driven vehicles
+            if len(self.k.vehicle.get_controlled_lc_ids()) > 0:
+                direction = []
+                for veh_id in self.k.vehicle.get_controlled_lc_ids():
+                    target_lane = self.k.vehicle.get_lane_changing_controller(
+                        veh_id).get_action(self)
+                    direction.append(target_lane)
+                self.k.vehicle.apply_lane_change(
+                    self.k.vehicle.get_controlled_lc_ids(),
+                    direction=direction)
+
+            # perform (optionally) routing actions for all vehicle in the
+            # network, including rl and sumo-controlled vehicles
+            routing_ids = []
+            routing_actions = []
+            for veh_id in self.k.vehicle.get_ids():
+                if self.k.vehicle.get_routing_controller(veh_id) is not None:
+                    routing_ids.append(veh_id)
+                    route_contr = self.k.vehicle.get_routing_controller(veh_id)
+                    routing_actions.append(route_contr.choose_route(self))
+            self.k.vehicle.choose_routes(routing_ids, routing_actions)
+
+            self.apply_rl_actions(rl_actions)
+
+            self.additional_command()
+
+            # advance the simulation in the simulator by one step
+            self.k.simulation.simulation_step()
+
+            # store new observations in the vehicles and traffic lights class
+            self.k.update(reset=False)
+
+            # update the colors of vehicles
+            if self.sim_params.render:
+                self.k.vehicle.update_vehicle_colors()
+
+            # crash encodes whether the simulator experienced a collision
+            crash = self.k.simulation.check_collision()
+
+            # stop collecting new simulation steps if there is a collision
+            if crash:
+                break
+
+        states = self.get_state()
+        done = {key: key in self.k.vehicle.get_arrived_ids()
+                for key in states.keys()}
+        if crash or (self.time_counter >= self.env_params.sims_per_step *
+                     (self.env_params.warmup_steps + self.env_params.horizon)):
+            done['__all__'] = True
+        else:
+            done['__all__'] = False
+        infos = {key: {} for key in states.keys()}
+
+        # compute the reward
+        if self.env_params.clip_actions:
+            clipped_actions = self.clip_actions(rl_actions)
+            reward = self.compute_reward(clipped_actions, fail=crash)
+        else:
+            reward = self.compute_reward(rl_actions, fail=crash)
+
+        for rl_id in self.k.vehicle.get_arrived_rl_ids():
+            done[rl_id] = True
+            reward[rl_id] = 0
+            states[rl_id] = np.zeros(self.observation_space.shape[0])
+
+        self.rew_list += list(reward.values())
+        if done["__all__"]:
+            # print(done)
+            # log average travel time and return
+            iter_ = self.get_training_iter()
+            try:
+                self.log_travel_times(rl_actions, iter_)
+            except:
+                pass
+            # log average reward
+            self.log_rewards(self.rew_list, rl_actions, during_simulation=False, n_iter=iter_)
+
+        return states, reward, done, infos
+
+    def log_travel_times(self, rl_actions, iter_):
+        """TODO: document args and put in utlis"""
+
+        # wait a short period of time to ensure the xml file is readable
+        time.sleep(0.1)
+
+        # collect the location of the emission file
+        dir_path = self.sim_params.emission_path
+        emission_filename = \
+            "{0}-emission.xml".format(self.network.name)
+        emission_path = os.path.join(dir_path, emission_filename)
+
+        # convert the emission file into a csv
+        # emission_to_csv(emission_path)
+        trip_info = trip_info_emission_to_csv(emission_path)
+        # log travel times to tensorbord
+        info = pd.DataFrame(trip_info)
+
+        # Delete the .xml version of the emission file.
+        os.remove(emission_path)
+
+        # get full trip durations
+        if rl_actions is None:
+            n_iter = self.step_counter
+            string = "untrained"
+        else:
+            n_iter = iter_
+            string = "trained"
+
+        avg = info.travel_times.mean()
+        print("avg_travel_time = "+ str(avg))
+        self.writer.add_scalar(self.exp_name + '/travel_times ' + string, avg, n_iter)
+        return n_iter
+
+    def log_rewards(self, rew, action, during_simulation=False, n_iter=None):
+        """TODO: document args and put in utlis"""
+
+        if action is None:
+            string = "untrained"
+        else:
+            string = "trained"
+
+        if during_simulation:
+            self.writer.add_scalar(self.exp_name + '/reward_per_simulation_step ' + string, rew, self.step_counter)
+        else:
+            avg = np.mean(np.array(rew))
+            print("avg_reward = " + str(avg))
+            self.writer.add_scalar(self.exp_name + '/average_reward ' + string, avg, n_iter)
+
+    def get_training_iter(self):
+        """Create csv file to track training iterations"""
+        filename = "/iterations.csv"
+        home_dir = os.path.expanduser('~')
+        file_location = home_dir + '/ray_results/grid1x3-trail'
+        full_path = file_location+filename
+
+        # check if file exists
+        if not os.path.isfile(full_path):
+            # create dataframe wiht training_iteration = 0
+            data = {"training_iteration": 0}
+            file_to_convert = pd.DataFrame([data])
+
+            # convert to csv
+            file_to_convert.to_csv(full_path, index=False)
+            return 0
+
+        else:
+            # read csv
+            df = pd.read_csv(full_path, index_col=False)
+            n_iter = df.training_iteration.iat[-1]
+
+            # increase iteration by 1
+            data = {"training_iteration": n_iter+1}
+            file_to_convert = df.append(data, ignore_index=True)
+
+            # convert to csv
+            file_to_convert.to_csv(full_path, index=False)
+
+            return n_iter
+
+
+
+
+
