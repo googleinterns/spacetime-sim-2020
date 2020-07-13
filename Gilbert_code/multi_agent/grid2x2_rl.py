@@ -39,8 +39,8 @@ SHORT_LENGTH = 240  # length of edges that vehicles start on
 N_LEFT, N_RIGHT, N_TOP, N_BOTTOM = 1, 1, 1, 1
 
 # EDGE_INFLOW = 300  # inflow rate of vehicles at every edge
-N_ROWS = 1  # number of row of bidirectional lanes
-N_COLUMNS = 3  # number of columns of bidirectional lanes
+N_ROWS = 2  # number of row of bidirectional lanes
+N_COLUMNS = 2  # number of columns of bidirectional lanes
 
 
 # we place a sufficient number of vehicles to ensure they confirm with the
@@ -85,7 +85,7 @@ for edge in outer_edges:
 flow_params = dict(
     # name of the experiment
     # exp_tag="grid_0_{}x{}_i{}_multiagent".format(N_ROWS, N_COLUMNS, EDGE_INFLOW),
-    exp_tag="grid1x3-trail",
+    exp_tag="grid2x2-trail",
 
     # name of the flow environment the experiment is running on
     env_name=MultiTrafficLightGridPOEnvPL,
