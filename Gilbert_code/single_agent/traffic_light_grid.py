@@ -34,20 +34,20 @@ summaries_dir = home_dir + '/ray_results/real_time_metrics'
 log_rewards_during_iteration = True
 
 look_ahead = 80
-# log_title = '/simulation{}'.format("rl_80_L")
+# log_title =  '/simulation_test{}'.format("rl_80_L")
 log_title = '/simulation_test{}'.format("rl_80_H")
 
 # look_ahead = 160
-# # log_title = '/simulation{}'.format("rl_160_L")
-# log_title = '/simulation{}'.format("rl_160_H")
+# log_title =  '/simulation_test{}'.format("rl_160_L")
+# log_title =  '/simulation_test{}'.format("rl_160_H")
 #
 # look_ahead = 240
-# log_title = '/simulation{}'.format("rl_240_L")
-# log_title = '/simulation{}'.format("rl_240_H")
+# log_title =  '/simulation_test{}'.format("rl_240_L")
+# log_title =  '/simulation_test{}'.format("rl_240_H")
 #
 # look_ahead = 43
-# # log_title = '/simulation{}'.format("rl_43_L")
-# log_title = '/simulation{}'.format("rl_43_H")
+# log_title =  '/simulation_test{}'.format("rl_43_L")
+# log_title =  '/simulation_test{}'.format("rl_240_H")
 
 
 RED = (255, 0, 0)
@@ -211,7 +211,7 @@ class TrafficLightGridEnv(Env):
         #             break
 
         # check whether the action space is meant to be discrete or continuous
-        self.discrete = env_params.additional_params.get("discrete",False)
+        # self.discrete = env_params.additional_params.get("discrete",False)
         self.discrete = True
         self.exp_name = log_title
         self.writer = SummaryWriter(summaries_dir + self.exp_name)
@@ -678,6 +678,7 @@ class TrafficLightGridPOEnv(TrafficLightGridEnv):
 
         # used during visualization
         self.observed_ids = []
+        self.path = summaries_dir + "/"
 
     @property
     def observation_space(self):
@@ -823,6 +824,7 @@ class MyGridEnv(TrafficLightGridPOEnv):
         light and for each vehicle its velocity, distance to intersection,
         edge_number traffic light state. This is partially observed
         """
+
         edge_pressure = []
         speeds = []
         dist_to_intersec = []
@@ -1148,6 +1150,7 @@ class MyGridEnv(TrafficLightGridPOEnv):
             string = "trained"
 
         avg = info.travel_times.mean()
+        print("avg_travel_time = "+ str(avg))
         self.writer.add_scalar(self.exp_name + '/travel_times ' + string, avg, n_iter)
         return n_iter
 
@@ -1163,6 +1166,7 @@ class MyGridEnv(TrafficLightGridPOEnv):
             self.writer.add_scalar(self.exp_name + '/reward_per_simulation_step ' + string, rew, self.step_counter)
         else:
             avg = np.mean(np.array(rew))
+            print("avg_reward = " + str(avg))
             self.writer.add_scalar(self.exp_name + '/average_reward ' + string, avg, n_iter)
 
     def get_training_iter(self):
