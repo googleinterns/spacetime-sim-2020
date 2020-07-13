@@ -214,7 +214,8 @@ flow_params = dict(
     exp_tag='grid-trail',
 
     # name of the flow environment the experiment is running on
-    env_name=MultiTrafficLightGridPOEnvPL,
+    env_name=MyGridEnv,
+    # env_name=MultiTrafficLightGridPOEnvPL,
 
     # name of the network class the experiment is running on
     network=TrafficLightGridNetwork,
@@ -226,21 +227,22 @@ flow_params = dict(
     sim=SumoParams(
         sim_step=1,
         render=False,
+        emission_path='~/flow/data',
     ),
 
     # environment related parameters (see flow.core.params.EnvParams)
     env=EnvParams(
-        horizon=3600,
-        # additional_params=ADDITIONAL_ENV_PARAMS.copy(),
-        additional_params={
-            "target_velocity": 50,
-            "switch_time": 3,
-            "num_observed": 2,
-            "discrete": True,
-            "tl_type": "actuated",
-            "num_local_edges": 4,
-            "num_local_lights": 4,
-        },
+        horizon=100,
+        additional_params=ADDITIONAL_ENV_PARAMS.copy(),
+        # additional_params={
+        #     "target_velocity": 50,
+        #     "switch_time": 3,
+        #     "num_observed": 2,
+        #     "discrete": True,
+        #     "tl_type": "actuated",
+        #     "num_local_edges": 4,
+        #     "num_local_lights": 4,
+        # },
     ),
 
     # network-related parameters (see flow.core.params.NetParams and the
