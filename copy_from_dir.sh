@@ -15,7 +15,7 @@ cp Gilbert_code/multi_agent/grid2x2.py ~/flow/examples/exp_configs/non_rl
 #rl
 cp Gilbert_code/single_agent/grid1x1_rl.py ~/flow/examples/exp_configs/rl/singleagent
 cp Gilbert_code/multi_agent/grid1x3_rl.py ~/flow/examples/exp_configs/rl/multiagent
-#cp Gilbert_code/multi_agent/grid2x2_rl.py ~/flow/examples/exp_configs/rl/multiagent
+cp Gilbert_code/multi_agent/grid2x2_rl.py ~/flow/examples/exp_configs/rl/multiagent
 
 #utils and source_code_edits
 cp Gilbert_code/utils_and_source_code_edits/util.py ~/flow/flow/core
