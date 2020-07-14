@@ -22,7 +22,7 @@ import pandas as pd
 import time
 
 #######################################################
-########## Gilbert code below for Presslight ##########
+# ######### Gilbert code below for PressLight ####### #
 #######################################################
 now = datetime.now()
 current_time = now.strftime("%Y-%H-%M-%S")
@@ -31,31 +31,31 @@ if not os.path.exists(home_dir + '/ray_results/real_time_metrics'):
     os.makedirs(home_dir + '/ray_results/real_time_metrics')
 
 summaries_dir = home_dir + '/ray_results/real_time_metrics'
-log_rewards_during_iteration = True
+log_rewards_during_iteration = False
 
-look_ahead = 80
-# log_title =  '/simulation_test{}'.format("rl_80_L")
-log_title = '/simulation_test{}'.format("rl_80_H")
-
+# choose look-ahead distance
+# look_ahead = 80
 # look_ahead = 160
-# log_title =  '/simulation_test{}'.format("rl_160_L")
-# log_title =  '/simulation_test{}'.format("rl_160_H")
-#
 # look_ahead = 240
-# log_title =  '/simulation_test{}'.format("rl_240_L")
-# log_title =  '/simulation_test{}'.format("rl_240_H")
-#
-# look_ahead = 43
-# log_title =  '/simulation_test{}'.format("rl_43_L")
-# log_title =  '/simulation_test{}'.format("rl_240_H")
+look_ahead = 43
 
+# choose demand pattern
+# demand = "L_testing"
+demand = "H_testing"
+
+# choose exp running
+exp = "rl"
+# exp = "non_rl"
+
+# log title for tensorboard
+log_title = '/simulation_test_1x1_{}_{}_{}'.format(exp, look_ahead, demand)
 
 RED = (255, 0, 0)
-BLUE =(0, 0, 255)
+BLUE = (0, 0, 255)
 CYAN = (0, 255, 255)
 
 #######################################################
-########## Gilbert code above for Presslight ##########
+# ######### Gilbert code above for PressLight ####### #
 #######################################################
 
 ADDITIONAL_ENV_PARAMS = {
@@ -211,13 +211,7 @@ class TrafficLightGridEnv(Env):
         #             break
 
         # check whether the action space is meant to be discrete or continuous
-        # self.discrete = env_params.additional_params.get("discrete",False)
-        self.discrete = True
-        self.exp_name = log_title
-        self.writer = SummaryWriter(summaries_dir + self.exp_name)
-        self.rew_list = []
-        # set look ahead distance
-        self.look_ahead = look_ahead
+        self.discrete = env_params.additional_params.get("discrete", False)
 
     @property
     def action_space(self):
@@ -810,101 +804,73 @@ class TrafficLightGridTestEnv(TrafficLightGridEnv):
         return 0
 
     #######################################################
-    ########## Gilbert code below for Presslight ##########
+    # ######### Gilbert code below for PressLight ####### #
     #######################################################
 
 
+# class PressLightSingleEnv(TrafficLightGridPOEnv):
 class MyGridEnv(TrafficLightGridPOEnv):
-    """Inherited parent class for presslight paper"""
+    """See parent class.
+`   Inherited for PressLight baseline Implementation
+    """
+
+    def __init__(self, env_params, sim_params, network, simulator='traci'):
+        super().__init__(env_params, sim_params, network, simulator)
+
+        # check whether the action space is meant to be discrete or continuous
+        # self.discrete = env_params.additional_params.get("discrete", False)
+        self.discrete = True
+
+        # set up Tensorboard logging info
+        self.exp_name = log_title
+        self.writer = SummaryWriter(summaries_dir + self.exp_name)
+
+        # set look ahead distance
+        self.look_ahead = look_ahead
+
+        # initialize edge pressure and reward list
+        self.edge_pressure = None
+        self.rew_list = []
 
     def get_state(self):
         """See parent class.
 
-        Returns self.num_observed number of vehicles closest to each traffic
-        light and for each vehicle its velocity, distance to intersection,
-        edge_number traffic light state. This is partially observed
+        Returns edge pressures of an intersection, edge_numbers,
+         traffic light state. This is partially observed
         """
 
-        edge_pressure = []
-        speeds = []
-        dist_to_intersec = []
+        self.edge_pressure = []
         edge_number = []
+        observed_ids_ahead = []
         observed_ids_behind = []
-        max_speed = max(
-            self.k.network.speed_limit(edge)
-            for edge in self.k.network.get_edge_list())
-        grid_array = self.net_params.additional_params["grid_array"]
-        max_dist = max(grid_array["short_length"], grid_array["long_length"],
-                       grid_array["inner_length"])
-
-        internal_edges = []
-        for i in self.k.network.rts:
-            if self.k.network.rts[i]:
-                if self.k.network.rts[i][0][0][1:-1]:
-                    internal_edges += [self.k.network.rts[i][0][0][1:]]
 
         # collect edge pressures for single intersection
-        for rl_id, edges in self.network.node_mapping:
-            incoming = edges
-            all_observed_ids_ahead = []
-            for edge_ in incoming:
+        for _, edges in self.network.node_mapping:
+            incoming_edges = edges
+            for edge_ in incoming_edges:
+                # for each incoming edge, log the incoming and outgoing vehicle ids
                 if self.k.network.rts[edge_]:
                     index_ = self.k.network.rts[edge_][0][0].index(edge_)
-                    # for each incoming edge, log the  ids
-                    observed_ids = \
-                        self.get_id_within_look_ahead(edge_)
-                    all_observed_ids_ahead += observed_ids
-                    outgoing = self.k.network.rts[edge_][0][0][index_+1]
-                    observed_ids_behind = self.get_id_within_look_behind(outgoing)
+                    observed_ids_ahead = \
+                        self.get_id_within_dist(edge_, direction="ahead")
+                    outgoing_lane = self.k.network.rts[edge_][0][0][index_+1]
+                    observed_ids_behind = self.get_id_within_dist(outgoing_lane, direction="behind")
+
                 # color vehicles
-                self.color_vehicles(observed_ids, CYAN)
+                self.color_vehicles(observed_ids_ahead, CYAN)
                 self.color_vehicles(observed_ids_behind, RED)
-                edge_pressure += [len(observed_ids) - len(observed_ids_behind)]
+                # compute pressure
+                self.edge_pressure += [len(observed_ids_ahead) - len(observed_ids_behind)]
 
+            # assigning unique number id for each incoming edge
             for edge in edges:
-
-                speeds += [
-                    self.k.vehicle.get_speed(veh_id) / max_speed
-                    for veh_id in observed_ids
-                ]
-
-                dist_to_intersec += [
-                    (self.k.network.edge_length(
-                        self.k.vehicle.get_edge(veh_id)) -
-                        self.k.vehicle.get_position(veh_id)) / max_dist
-                    for veh_id in observed_ids
-                ]
-
                 edge_number += \
                     [self._convert_edge(edge) /
                      (self.k.network.network.num_edges - 1)
                      ]
 
-                if len(observed_ids) < self.num_observed:
-                    diff = self.num_observed - len(observed_ids)
-                    speeds += [0] * diff
-                    dist_to_intersec += [0] * diff
-                    # edge_number += [0] * diff
-
-        density = []
-        velocity_avg = []
-
-        for edge in self.k.network.get_edge_list():
-            ids = self.k.vehicle.get_ids_by_edge(edge)
-            if len(ids) > 0:
-                vehicle_length = 5
-                density += [vehicle_length * len(ids) /
-                            self.k.network.edge_length(edge)]
-                velocity_avg += [np.mean(
-                    [self.k.vehicle.get_speed(veh_id) for veh_id in
-                     ids]) / max_speed]
-            else:
-                density += [0]
-                velocity_avg += [0]
-
-        self.edge_pressure = edge_pressure # place in __init__
         return np.array(np.concatenate([
-            edge_pressure, edge_number,
+            self.edge_pressure, edge_number,
             self.last_change.flatten().tolist(),
             self.direction.flatten().tolist(),
             self.currently_yellow.flatten().tolist()
@@ -912,8 +878,10 @@ class MyGridEnv(TrafficLightGridPOEnv):
 
     def compute_reward(self, rl_actions, **kwargs):
         """See class definition."""
+
         rew = -sum(self.edge_pressure)
         if log_rewards_during_iteration:
+            # write current reward to tensorboard (during simulation)
             self.log_rewards(rew, rl_actions, during_simulation=True)
         return rew
 
@@ -924,88 +892,100 @@ class MyGridEnv(TrafficLightGridPOEnv):
         tl_box = Box(
             low=-np.inf,
             high=np.inf,
-            shape=(3 * self.rows * self.cols + 4 + 4,), # hardcoded in for single traffic light
+            # hardcoded in for single traffic light
+            shape=(3 * self.rows * self.cols + 4 + 4,),
             dtype=np.float32)
         return tl_box
 
     @property
     def action_space(self):
         """See class definition."""
-        # for DQN
+        # Discrete space for DQN
         return Discrete(2 ** self.num_traffic_lights)
 
-    def get_id_within_look_ahead(self, edges):
-        ids_in_scope = filter(self.is_within_look_ahead, self.k.vehicle.get_ids_by_edge(edges))
-        return list(ids_in_scope)
+    def get_id_within_dist(self, edge, direction):
+        """Collect vehicle ids within looking ahead or behind distance
 
-    def get_id_within_look_ahead2(self, incoming):
-        """ TODO: Merge methods above and below"""
+        Parameters
+        ----------
+        edge: string
+            the name of the edge to observe
 
-        traffic_light_obs = dict()
-        ids_ = []
+        direction: string
+            the direction of the edge relative to the traffic lights.
+            Can be either "ahead" or "behind
 
-        for opposite_edge in incoming:
-            ids_in_scope = filter(self.is_within_look_ahead, self.k.vehicle.get_ids_by_edge(opposite_edge))
-            ids_in_scope_list = list(ids_in_scope)
-            traffic_light_obs[opposite_edge] = ids_in_scope_list
-            ids_ = ids_ + ids_in_scope_list
+        Returns
+        ----------
+        list
+            list of observed string ids of vehicles either
+            ahead or behind traffic light
 
-        for veh_id in list(ids_):
-            self.k.vehicle.set_color(veh_id=veh_id, color=CYAN)
-        return list(ids_)
+        """
+        if direction == "ahead":
+            ids_in_scope = filter(self.is_within_look_ahead, self.k.vehicle.get_ids_by_edge(edge))
+            return list(ids_in_scope)
+
+        if direction == "behind":
+            ids_in_scope = filter(self.is_within_look_behind, self.k.vehicle.get_ids_by_edge(edge))
+            return list(ids_in_scope)
 
     def is_within_look_ahead(self, veh_id):
-        """TODO: args and output document"""
+        """Check if vehicle is within the looking distance
+
+        Parameters
+        ----------
+        veh_id: string
+            string id of vehicle in pre-defined lane
+
+        Returns
+        ----------
+        bool
+            True or False
+        """
+
         if self.get_distance_to_intersection(veh_id) <= self.look_ahead:
             return True
         else:
             return False
 
-    def get_id_within_look_behind(self, edges):
-        ids_ = filter(self.is_within_look_behind, self.k.vehicle.get_ids_by_edge(edges))
-        return list(ids_)
-
-    def color_vehicles(self, ids, color):
-        for veh_id in ids:
-            self.k.vehicle.set_color(veh_id=veh_id, color=color)
-        return
-
-    def get_id_within_look_behind2(self, outgoing=None):
-        """TODO: args and output document"""
-        traffic_light_obs = dict()
-        ids_ = []
-        for opposite_edge in outgoing:
-            ids_in_scope = filter(self.is_within_look_behind, self.k.vehicle.get_ids_by_edge(opposite_edge))
-            ids_in_scope_list = list(ids_in_scope)
-            traffic_light_obs[opposite_edge] = ids_in_scope_list
-            ids_ = ids_ + ids_in_scope_list
-
-        for veh_id in list(ids_):
-            self.k.vehicle.set_color(veh_id=veh_id, color=RED)
-        return ids_
-
     def is_within_look_behind(self, veh_id):
-        """TODO: args and output document"""
+        """Check if vehicle is within the looking distance
 
-        edge_length = self.k.network.edge_length(self.k.vehicle.get_edge(veh_id))
-        if self.k.vehicle.get_position(veh_id) <= (self.look_ahead):
+        Parameters
+        ----------
+        veh_id: string
+            string id of vehicle in pre-defined lane
+
+        Returns
+        ----------
+        bool
+            True or False
+        """
+
+        if self.k.vehicle.get_position(veh_id) <= self.look_ahead:
             return True
         else:
             return False
 
+    def color_vehicles(self, ids, color):
+        """Color observed vehicles to visualize during simulation
+
+        Parameters
+        ----------
+        ids: list
+            list of string ids of vehicles to color
+        color: tuple
+            tuple of RGB color pattern to color vehicles
+
+        """
+        for veh_id in ids:
+            self.k.vehicle.set_color(veh_id=veh_id, color=color)
+
     def step(self, rl_actions):
         """Advance the environment by one step.
 
-        Assigns actions to autonomous and human-driven agents (i.e. vehicles,
-        traffic lights, etc...). Actions that are not assigned are left to the
-        control of the simulator. The actions are then used to advance the
-        simulator by the number of time steps requested per environment step.
-
-        Results from the simulations are processed through various classes,
-        such as the Vehicle and TrafficLight kernels, to produce standardized
-        methods for identifying specific network state features. Finally,
-        results from the simulator are used to generate appropriate
-        observations.
+        See parent class
 
         Parameters
         ----------
@@ -1023,105 +1003,33 @@ class MyGridEnv(TrafficLightGridPOEnv):
         info : dict
             contains other diagnostic information from the previous action
         """
-        for _ in range(self.env_params.sims_per_step):
-            self.time_counter += 1
-            self.step_counter += 1
 
-            # perform acceleration actions for controlled human-driven vehicles
-            if len(self.k.vehicle.get_controlled_ids()) > 0:
-                accel = []
-                for veh_id in self.k.vehicle.get_controlled_ids():
-                    action = self.k.vehicle.get_acc_controller(
-                        veh_id).get_action(self)
-                    accel.append(action)
-                self.k.vehicle.apply_acceleration(
-                    self.k.vehicle.get_controlled_ids(), accel)
+        # advance simulation
+        next_observation, reward, done, infos = super().step(rl_actions)
 
-            # perform lane change actions for controlled human-driven vehicles
-            if len(self.k.vehicle.get_controlled_lc_ids()) > 0:
-                direction = []
-                for veh_id in self.k.vehicle.get_controlled_lc_ids():
-                    target_lane = self.k.vehicle.get_lane_changing_controller(
-                        veh_id).get_action(self)
-                    direction.append(target_lane)
-                self.k.vehicle.apply_lane_change(
-                    self.k.vehicle.get_controlled_lc_ids(),
-                    direction=direction)
-
-            # perform (optionally) routing actions for all vehicles in the
-            # network, including RL and SUMO-controlled vehicles
-            routing_ids = []
-            routing_actions = []
-            for veh_id in self.k.vehicle.get_ids():
-                if self.k.vehicle.get_routing_controller(veh_id) \
-                        is not None:
-                    routing_ids.append(veh_id)
-                    route_contr = self.k.vehicle.get_routing_controller(
-                        veh_id)
-                    routing_actions.append(route_contr.choose_route(self))
-
-            self.k.vehicle.choose_routes(routing_ids, routing_actions)
-
-            self.apply_rl_actions(rl_actions)
-
-            self.additional_command()
-
-            # advance the simulation in the simulator by one step
-            self.k.simulation.simulation_step()
-
-            # store new observations in the vehicles and traffic lights class
-            self.k.update(reset=False)
-
-            # update the colors of vehicles
-            if self.sim_params.render:
-                self.k.vehicle.update_vehicle_colors()
-
-            # crash encodes whether the simulator experienced a collision
-            crash = self.k.simulation.check_collision()
-
-            # stop collecting new simulation steps if there is a collision
-            if crash:
-                break
-
-            # render a frame
-            self.render()
-
-        states = self.get_state()
-
-        # collect information of the state of the network based on the
-        # environment class used
-        self.state = np.asarray(states).T
-
-        # collect observation new state associated with action
-        next_observation = np.copy(states)
-
-        # test if the environment should terminate due to a collision or the
-        # time horizon being met
-        done = (self.time_counter >= self.env_params.sims_per_step *
-                (self.env_params.warmup_steps + self.env_params.horizon)
-                or crash)
-
-        # compute the info for each agent
-        infos = {}
-
-        # compute the reward
-        if self.env_params.clip_actions:
-            rl_clipped = self.clip_actions(rl_actions)
-            reward = self.compute_reward(rl_clipped, fail=crash)
-        else:
-            reward = self.compute_reward(rl_actions, fail=crash)
-
+        # log average reward and average travel times if simulation is over
         self.rew_list += [reward]
         if done:
-            # log average travel time and return
-            n_iter = self.log_travel_times(rl_actions)
+            # current training iteration
+            iter_ = self.get_training_iter()
+            # log average travel time
+            self.log_travel_times(rl_actions, iter_)
             # log average reward
-            self.log_rewards(self.rew_list, rl_actions, during_simulation=False, n_iter=n_iter)
+            self.log_rewards(self.rew_list, rl_actions, during_simulation=False, n_iter=iter_)
 
         return next_observation, reward, done, infos
 
-    def log_travel_times(self, rl_actions):
-        """TODO: document args and put in utlis"""
+    def log_travel_times(self, rl_actions, iter_):
+        """log average travel time to tensorboard
+
+        Parameters
+        ----------
+         rl_actions : array_like
+            a list of actions provided by the rl algorithm
+         iter_: int
+            value of training iteration currently being simulated
+
+        """
 
         # wait a short period of time to ensure the xml file is readable
         time.sleep(0.1)
@@ -1132,30 +1040,43 @@ class MyGridEnv(TrafficLightGridPOEnv):
             "{0}-emission.xml".format(self.network.name)
         emission_path = os.path.join(dir_path, emission_filename)
 
-        # convert the emission file into a csv
-        # emission_to_csv(emission_path)
+        # convert the emission file into a csv adn return trip info in dict
         trip_info = trip_info_emission_to_csv(emission_path)
+
         # log travel times to tensorbord
         info = pd.DataFrame(trip_info)
 
         # Delete the .xml version of the emission file.
         os.remove(emission_path)
 
-        # get full trip durations
         if rl_actions is None:
             n_iter = self.step_counter
             string = "untrained"
         else:
-            n_iter = self.get_training_iter()
+            n_iter = iter_
             string = "trained"
 
+        # get average of full trip durations
         avg = info.travel_times.mean()
-        print("avg_travel_time = "+ str(avg))
+        print("avg_travel_time = " + str(avg))
         self.writer.add_scalar(self.exp_name + '/travel_times ' + string, avg, n_iter)
-        return n_iter
 
     def log_rewards(self, rew, action, during_simulation=False, n_iter=None):
-        """TODO: document args and put in utlis"""
+        """log current reward during simulation or average reward after simulation to tensorboard
+
+        Parameters
+        ----------
+         rew : array_like or int
+            single value of current time-step's reward if int
+            array or rewards for each time-step for entire simulation
+         action : array_like
+            a list of actions provided by the rl algorithm
+         during_simulation : bool
+            an list of actions provided by the rl algorithm
+         n_iter: int
+            value of training iteration currently being simulated
+
+        """
 
         if action is None:
             string = "untrained"
@@ -1163,20 +1084,55 @@ class MyGridEnv(TrafficLightGridPOEnv):
             string = "trained"
 
         if during_simulation:
-            self.writer.add_scalar(self.exp_name + '/reward_per_simulation_step ' + string, rew, self.step_counter)
+            self.writer.add_scalar(
+                self.exp_name + '/reward_per_simulation_step ' + string,
+                rew,
+                self.step_counter
+            )
         else:
             avg = np.mean(np.array(rew))
             print("avg_reward = " + str(avg))
-            self.writer.add_scalar(self.exp_name + '/average_reward ' + string, avg, n_iter)
+            self.writer.add_scalar(
+                self.exp_name + '/average_reward ' + string,
+                avg,
+                n_iter
+            )
 
     def get_training_iter(self):
-        # FIXME: check if ray instance is active, the run below, else return 0. is static
-        home_dir = os.path.expanduser('~')
-        directory = home_dir + '/ray_results/grid-trail'
-        lst = sorted([os.path.join(directory, d) for d in os.listdir(directory)
-                      if os.path.isdir(os.path.join(directory, d))], key=os.path.getmtime)
-        folder = lst[-1]
-        print(folder)
-        dir_ = folder + '/progress.csv'
-        df = pd.read_csv(dir_)
-        return df.training_iteration.iat[-1]
+        """Create csv file to track train iterations
+        iteration steps and update the values
+
+        Returns
+        ----------
+        n_iter: int
+            value of training iteration currently being simulated
+
+        """
+        filename = "/iterations_{}_{}.csv".format(self.look_ahead, demand)
+        root_dir = os.path.expanduser('~')
+        file_location = root_dir + '/ray_results/grid-trail'
+        full_path = file_location+filename
+
+        # check if file exists in directory
+        if not os.path.isfile(full_path):
+            # create dataframe with training_iteration = 0
+            data = {"training_iteration": 0}
+            file_to_convert = pd.DataFrame([data])
+
+            # convert to csv
+            file_to_convert.to_csv(full_path, index=False)
+            return 0
+
+        else:
+            # read csv
+            df = pd.read_csv(full_path, index_col=False)
+            n_iter = df.training_iteration.iat[-1]
+
+            # increase iteration by 1
+            data = {"training_iteration": n_iter+1}
+            file_to_convert = df.append(data, ignore_index=True)
+
+            # convert to csv
+            file_to_convert.to_csv(full_path, index=False)
+
+            return n_iter
