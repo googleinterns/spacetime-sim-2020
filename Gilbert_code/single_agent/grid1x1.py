@@ -13,6 +13,15 @@ from gym.spaces.box import Box
 from gym.spaces.discrete import Discrete
 from gym.spaces import Tuple
 
+# # # exp 1
+arterial = 600
+side_street = 180
+
+# # exp 2
+# arterial = 1400
+# side_street = 420
+
+
 WHITE = (255, 255, 255)
 CYAN = (0, 255, 255)
 RED = (255, 0, 0)
@@ -109,15 +118,15 @@ def get_flow_params(col_num, row_num, additional_net_params):
     outer_edges = gen_edges(col_num, row_num)
     for i in range(len(outer_edges)):
         if outer_edges[i].__contains__("top") or outer_edges[i].__contains__("bot"):
-            vph = 600
+            vph = arterial
         else:
-            vph = 180
+            vph = side_street
         inflow.add(
             veh_type='human',
             edge=outer_edges[i],
             vehs_per_hour=vph,
             depart_lane='free',
-            depart_speed=10)
+            depart_speed=5)  # was 20
 
     net = NetParams(
         inflows=inflow,
@@ -190,13 +199,13 @@ phases = [{
     "maxDur": "6",
     "state": "ryry"
 }]
-tl_logic.add("center0", phases=phases, programID=1)
+tl_logic.add("center0", phases=phases, programID=1, tls_type="actuated")
 # tl_logic.add("center1", phases=phases, programID=1)
 # tl_logic.add("center2", phases=phases, programID=1, tls_type="actuated")
 
 additional_net_params = {
     "grid_array": grid_array,
-    "speed_limit": 35,
+    "speed_limit": 11,
     "horizontal_lanes": 1,
     "vertical_lanes": 1
 }
@@ -229,11 +238,12 @@ flow_params = dict(
     sim=SumoParams(
         sim_step=1,
         render=False,
+        emission_path='~/flow/data',
     ),
 
     # environment related parameters (see flow.core.params.EnvParams)
     env=EnvParams(
-        horizon=3600,
+        horizon=1000,
         additional_params=ADDITIONAL_ENV_PARAMS.copy(),
     ),
 
@@ -251,5 +261,5 @@ flow_params = dict(
 
     # traffic lights to be introduced to specific nodes (see
     # flow.core.params.TrafficLightParams)
-    # tls=tl_logic,
+    tls=tl_logic,
 )
