@@ -18,19 +18,19 @@ em_path = home_dir + '/flow/data'
 
 
 # LOW DEMAND
-arterial = 600
-side_street = 180
+# arterial = 600
+# side_street = 180
 
 # HIGH DEMAND
-# arterial = 1400
-# side_street = 420
+arterial = 1400
+side_street = 420
 
 # Experiment parameters
 N_ROLLOUTS = 1  # number of rollouts per training iteration
 N_CPUS = 1  # number of parallel workers
 
 # Environment parameters
-HORIZON = 100  # time horizon of a single rollout
+HORIZON = 3600  # time horizon of a single rollout
 V_ENTER = 5  # enter speed for departing vehicles
 INNER_LENGTH = 240  # length of inner edges in the traffic light grid network
 LONG_LENGTH = 240  # length of final edge in route
@@ -100,7 +100,7 @@ flow_params = dict(
     sim=SumoParams(
         restart_instance=True,
         sim_step=1,
-        render=True,
+        render=False,
         emission_path=em_path,
     ),
 
