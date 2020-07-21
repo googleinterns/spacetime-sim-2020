@@ -4,7 +4,7 @@ from flow.envs.bay_bridge import BayBridgeEnv
 from flow.envs.bottleneck import BottleneckAccelEnv, BottleneckEnv, \
     BottleneckDesiredVelocityEnv
 from flow.envs.traffic_light_grid import TrafficLightGridEnv, \
-    TrafficLightGridPOEnv, TrafficLightGridTestEnv, TrafficLightGridBenchmarkEnv, MyGridEnv
+    TrafficLightGridPOEnv, TrafficLightGridTestEnv, TrafficLightGridBenchmarkEnv
 from flow.envs.ring.lane_change_accel import LaneChangeAccelEnv, \
     LaneChangeAccelPOEnv
 from flow.envs.ring.accel import AccelEnv
@@ -19,6 +19,8 @@ from flow.envs.bottleneck_env import DesiredVelocityEnv
 from flow.envs.green_wave_env import PO_TrafficLightGridEnv
 from flow.envs.green_wave_env import GreenWaveTestEnv
 
+# implemented for Presslight single agent
+from flow.envs.presslight_single_agent import MyGridEnv
 
 __all__ = [
     'Env',
