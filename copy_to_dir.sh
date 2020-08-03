@@ -23,9 +23,10 @@ cp ~/flow/examples/exp_configs/rl/multiagent/grid1x3_rl.py Gilbert_code/multi_ag
 cp ~/flow/examples/exp_configs/rl/multiagent/grid2x2_rl.py Gilbert_code/multi_agent
 
 #utils and source_code_edits
-cp ~/flow/flow/core/util.py Gilbert_code/utils_and_source_code_edits
-cp ~/flow/flow/core/kernel/simulation/traci.py Gilbert_code/utils_and_source_code_edits
-cp ~/flow/examples/train.py Gilbert_code/utils_and_source_code_edits
+cp ~/flow/flow/core/util.py Gilbert_code/utils_and_source_code_edits/utils/
+cp ~/flow/flow/core/kernel/simulation/traci.py Gilbert_code/utils_and_source_code_edits/simulation/
+cp ~/flow/flow/core/kernel/network/traci.py Gilbert_code/utils_and_source_code_edits/network/
+cp ~/flow/examples/train.py Gilbert_code/utils_and_source_code_edits/training/
 
 #changes added
-cp ~/flow/flow/core/presslight_utils.py Gilbert_code/utils_and_source_code_edits
+cp ~/flow/flow/core/traffic_light_utils.py Gilbert_code/utils_and_source_code_edits/utils

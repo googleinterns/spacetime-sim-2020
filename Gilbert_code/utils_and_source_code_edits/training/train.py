@@ -18,6 +18,9 @@ from flow.utils.registry import env_constructor
 from flow.utils.rllib import FlowParamsEncoder, get_flow_params
 from flow.utils.registry import make_create_env
 
+# home_dir = os.path.expanduser('~')
+# directory = home_dir + '/ray_results/gid1x3_10x10x10_eps_0.1_0.1_new_rew/DQN_MultiTrafficLightGridPOEnvPL-v1_0_2020-07-25_23-27-37oz5emjhc/checkpoint_350'
+
 
 def parse_args(args):
     """Parse training options user can specify in command line.
@@ -147,13 +150,19 @@ def setup_exps_rllib(flow_params,
     agent_cls = get_agent_class(alg_run)
     config = deepcopy(agent_cls._default_config)
 
-    config["num_workers"] = n_cpus
+    config["num_workers"] = 1
     config["train_batch_size"] = horizon * n_rollouts
     config["gamma"] = 0.999  # discount rate
-    config["model"].update({"fcnet_hiddens": [32, 32, 32]})
+    config["model"].update({"fcnet_hiddens": [10,10,10]})
+    # config["model"].update({"fcnet_activation": "relu"})  ##test 1
     config["horizon"] = horizon
     config["exploration_fraction"] = 0.5
-    # "schedule_max_timesteps": 100000,
+    # config["lr"] = tune.grid_search([0.0001, 0.001, 0.1])
+    config["lr"] = 0.1
+    # config['adam_epsilon'] = 0.001
+    # config["grad_norm_clipping"]= 100
+    # config["train_batch_size"] = 20 #test 2
+    # config["schedule_max_timesteps"]= 10000000000
 
     # PPO specific params
     # config["use_gae"] = True
