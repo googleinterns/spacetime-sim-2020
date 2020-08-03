@@ -1,5 +1,5 @@
 #!/bin/bash
-#copy changed files in flow/ to Gilbert_code/
+# copy changed files in flow/ to Gilbert_code/
 #envs
 cp ~/flow/flow/envs/traffic_light_grid.py Gilbert_code/single_agent
 cp ~/flow//flow/envs/__init__.py Gilbert_code/single_agent
