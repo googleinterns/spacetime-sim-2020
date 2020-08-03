@@ -85,7 +85,7 @@ for edge in outer_edges:
 flow_params = dict(
     # name of the experiment
     # exp_tag="grid_0_{}x{}_i{}_multiagent".format(N_ROWS, N_COLUMNS, EDGE_INFLOW),
-    exp_tag="grid2x2-trail",
+    exp_tag="grid2x2-analysis",
 
     # name of the flow environment the experiment is running on
     env_name=MultiTrafficLightGridPOEnvPL,

@@ -40,12 +40,12 @@ CYAN = (0, 255, 255)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 
-USE_INFLOWS = False
+USE_INFLOWS = True
 ADDITIONAL_ENV_PARAMS = {
         'target_velocity': speed_lim,
         'switch_time': 3.0, # min switch time
         'num_observed': 1, # num of cars we can observe
-        'discrete': False,
+        'discrete': True,
         'tl_type': 'controlled' # actuated by SUMO
     }
 v_enter = 5
@@ -238,7 +238,7 @@ else:
 
 flow_params = dict(
     # name of the experiment
-    exp_tag='grid-trail',
+    exp_tag='grid-trail-analysis',
 
     # name of the flow environment the experiment is running on
     env_name=MyGridEnv,

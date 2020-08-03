@@ -26,7 +26,7 @@ arterial = 1400
 side_street = 420
 
 # Experiment parameters
-N_ROLLOUTS = 1  # number of rollouts per training iteration
+N_ROLLOUTS = 1  #  number of rollouts per training iteration
 N_CPUS = 1  # number of parallel workers
 
 # Environment parameters
@@ -85,7 +85,7 @@ for edge in outer_edges:
 flow_params = dict(
     # name of the experiment
     # exp_tag="grid_0_{}x{}_i{}_multiagent".format(N_ROWS, N_COLUMNS, EDGE_INFLOW),
-    exp_tag="grid1x3-trail",
+    exp_tag="GRID1x3-analysisv2",
 
     # name of the flow environment the experiment is running on
     env_name=MultiTrafficLightGridPOEnvPL,

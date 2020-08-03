@@ -150,7 +150,7 @@ def setup_exps_rllib(flow_params,
     config["num_workers"] = n_cpus
     config["train_batch_size"] = horizon * n_rollouts
     config["gamma"] = 0.999  # discount rate
-    config["model"].update({"fcnet_hiddens": [32, 32, 32]})
+    config["model"].update({"fcnet_hiddens": [5, 5, 5]})
     config["horizon"] = horizon
     config["exploration_fraction"] = 0.5
     # "schedule_max_timesteps": 100000,
