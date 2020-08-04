@@ -11,9 +11,10 @@ from tensorboardX import SummaryWriter
 import numpy as np
 import os
 from datetime import datetime
-from flow.core.presslight_utils import trip_info_emission_to_csv
+from flow.core.traffic_light_utils import trip_info_emission_to_csv
 import pandas as pd
 import time
+
 
 #######################################################
 # ######### Gilbert code below for PressLight ####### #
@@ -35,7 +36,7 @@ look_ahead = 43
 
 # choose demand pattern
 # demand = "L_analysis32x32x32"
-demand = "H_analysi_test_final"
+demand = "H_learning_rate_0.01_exp_0.5_16x16x16_"
 
 # choose exp running
 exp = "rl"
@@ -43,6 +44,10 @@ exp = "rl"
 
 # log title for tensorboard
 log_title = '/simulation_1x1_{}_{}_{}'.format(exp, look_ahead, demand)
+filename = "/iterations_{}_{}.csv".format(look_ahead, demand)
+root_dir = os.path.expanduser('~')
+file_location = root_dir + '/ray_results/grid1x3_learning_rate_0.01'
+full_path = file_location + filename
 
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
@@ -94,6 +99,8 @@ class MyGridEnv(TrafficLightGridPOEnv):
         self.edge_pressure = None
         self.rew_list = []
 
+        self.obs_shape = 14 * self.num_traffic_lights
+
     def get_state(self):
         """See parent class.
 
@@ -107,7 +114,7 @@ class MyGridEnv(TrafficLightGridPOEnv):
         observed_ids_behind = []
 
         # collect edge pressures for single intersection
-        for _, edges in self.network.node_mapping:
+        for rl_id, edges in self.network.node_mapping:
             incoming_edges = edges
             for edge_ in incoming_edges:
                 # for each incoming edge, log the incoming and outgoing vehicle ids
@@ -132,12 +139,25 @@ class MyGridEnv(TrafficLightGridPOEnv):
                      (self.k.network.network.num_edges - 1)
                      ]
 
-        return np.array(np.concatenate([
-            self.edge_pressure, edge_number,
-            self.last_change.flatten().tolist(),
-            self.direction.flatten().tolist(),
-            self.currently_yellow.flatten().tolist()
-            ]))
+        light_states = self.k.traffic_light.get_state(rl_id)
+        if light_states == "GrGr":
+            # green state
+            light_states_ = [1]
+        elif light_states == ["yryr"]:
+            # yellow state
+            light_states_ = [0.6]
+        else:
+            # all other states are red
+            light_states_ = [0.2]
+
+        observation = np.array(np.concatenate(
+            [self.edge_pressure,
+             edge_number,
+             self.direction.flatten().tolist(),
+             light_states_
+             ]))
+
+        return observation
 
     def compute_reward(self, rl_actions, **kwargs):
         """See class definition."""
@@ -155,8 +175,7 @@ class MyGridEnv(TrafficLightGridPOEnv):
         tl_box = Box(
             low=-np.inf,
             high=np.inf,
-            # hardcoded in for single traffic light
-            shape=(3 * self.rows * self.cols + 4 + 4,),
+            shape=(self.obs_shape,),
             dtype=np.float32)
         return tl_box
 
@@ -371,10 +390,10 @@ class MyGridEnv(TrafficLightGridPOEnv):
             value of training iteration currently being simulated
 
         """
-        filename = "/iterations_{}_{}.csv".format(self.look_ahead, demand)
-        root_dir = os.path.expanduser('~')
-        file_location = root_dir + '/ray_results/grid-trail'
-        full_path = file_location+filename
+        # filename = "/iterations_{}_{}.csv".format(self.look_ahead, demand)
+        # root_dir = os.path.expanduser('~')
+        # file_location = root_dir + '/ray_results/grid-trail-analysis'
+        # full_path = file_location+filename
 
         # check if file exists in directory
         if not os.path.isfile(full_path):
@@ -398,4 +417,4 @@ class MyGridEnv(TrafficLightGridPOEnv):
             # convert to csv
             file_to_convert.to_csv(full_path, index=False)
 
-            return n_iter
+            return n_iter+1

@@ -8,12 +8,14 @@ import numpy as np
 from gym.spaces.box import Box
 from gym.spaces.discrete import Discrete
 from flow.envs.multiagent.traffic_light_grid import MultiTrafficLightGridPOEnv
-from flow.core.presslight_utils import trip_info_emission_to_csv
+from flow.core.traffic_light_utils import trip_info_emission_to_csv
+from flow.envs.traffic_light_grid import TrafficLightGridPOEnv
 from tensorboardX import SummaryWriter
 import pandas as pd
 import time
 import os
 from datetime import datetime
+import matplotlib.pyplot as plt
 
 #######################################################
 # ######### Gilbert code below for PressLight ####### #
@@ -26,6 +28,9 @@ if not os.path.exists(home_dir + '/ray_results/real_time_metrics'):
 
 summaries_dir = home_dir + '/ray_results/real_time_metrics'
 log_rewards_during_iteration = False
+sumo_actuated_baseline = False
+save_plots = False
+exp_being_run = "masters demand sumo"
 
 # choose look-ahead distance
 # look_ahead = 80
@@ -35,7 +40,7 @@ look_ahead = 43
 
 # choose demand pattern
 # demand = "L_32x32x32"
-demand = "H_5x5x5"
+demand = "H_grid1x3_masters_monday_v2_BS"
 
 # choose exp running
 exp = "rl"
@@ -43,13 +48,34 @@ exp = "rl"
 
 # log title for tensorboard
 log_title = '/simulation_1x3_analysis_{}_{}_{}'.format(exp, look_ahead, demand)
+filename = "/iterations_{}_{}.csv".format(look_ahead, demand)
+root_dir = os.path.expanduser('~')
+file_location = root_dir + '/ray_results/grid1x3_learning_rate_0.01'
+full_path = file_location + filename
+# ADDITIONAL_ENV_PARAMS = {
+#     # num of nearby lights the agent can observe {0, ..., num_traffic_lights-1}
+#     "num_local_lights": 4,  # FIXME: not implemented yet
+#     # num of nearby edges the agent can observe {0, ..., num_edges}
+#     "num_local_edges": 4,  # FIXME: not implemented yet
+# }
 
 ADDITIONAL_ENV_PARAMS = {
-    # num of nearby lights the agent can observe {0, ..., num_traffic_lights-1}
-    "num_local_lights": 4,  # FIXME: not implemented yet
-    # num of nearby edges the agent can observe {0, ..., num_edges}
-    "num_local_edges": 4,  # FIXME: not implemented yet
+    # minimum switch time for each traffic light (in seconds)
+    "switch_time": 2.0,
+    # whether the traffic lights should be actuated by sumo or RL
+    # options are "controlled" and "actuated"
+    "tl_type": "controlled",
+    # determines whether the action space is meant to be discrete or continuous
+    "discrete": False,
 }
+
+ADDITIONAL_PO_ENV_PARAMS = {
+    # num of vehicles the agent can observe on each incoming edge
+    "num_observed": 2,
+    # velocity to use in reward functions
+    "target_velocity": 30,
+}
+
 
 # Index for retrieving ID when splitting node name, e.g. ":center#"
 ID_IDX = 1
@@ -58,12 +84,14 @@ RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 CYAN = (0, 255, 255)
 
+
 #######################################################
 # ######### Gilbert code above for PressLight ####### #
 #######################################################
 
 
-class MultiTrafficLightGridPOEnvPL(MultiTrafficLightGridPOEnv):
+class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
+
     """ Inherited for PressLight baseline Implementation
 
     Multiagent shared model version of TrafficLightGridPOEnv.
@@ -93,6 +121,28 @@ class MultiTrafficLightGridPOEnvPL(MultiTrafficLightGridPOEnv):
         # set look ahead distance
         self.look_ahead = look_ahead
         self.edge_pressure_dict = None
+        self.waiting_times = None
+        self.num_of_emergency_stops= dict()
+        self.delays = dict()
+        self.num_of_switch_actions = dict()
+        self.current_state = dict()
+        self.prev_state = dict()
+
+        if look_ahead == 43:
+            self.cars_in_scope = 24
+            self.obs_shape = (24 * 3 + 10) * self.num_traffic_lights
+
+            # elif look_ahead == 80:
+            #     cars_in_scope = """TODO"""
+            #     obs_shape = (124 * 3 + 10) * self.num_traffic_lights
+            #
+            # elif look_ahead == 160:
+            #     cars_in_scope = """TODO"""
+            #     obs_shape = ("""TODO""" * 3 + 10) * self.num_traffic_lights
+
+        elif look_ahead == 240:
+            self.cars_in_scope = 124
+            self.obs_shape = (124 * 3 + 10) * self.num_traffic_lights
 
     def get_state(self):
         """Observations for each traffic light agent.
@@ -123,6 +173,7 @@ class MultiTrafficLightGridPOEnvPL(MultiTrafficLightGridPOEnv):
         # collect list of names of inner edges
         internal_edges = []
         self.edge_pressure_dict = dict()
+        self.waiting_times = dict()
         for i in self.k.network.rts:
             if self.k.network.rts[i]:
                 if self.k.network.rts[i][0][0][1:-1]:
@@ -130,7 +181,9 @@ class MultiTrafficLightGridPOEnvPL(MultiTrafficLightGridPOEnv):
 
         node_to_edges = self.network.node_mapping
 
+        all_ids_incoming = dict()
         for rl_id in self.k.traffic_light.get_ids():
+            all_ids_incoming[rl_id] = []
 
             # collect observations for each traffic light
             rl_id_num = int(rl_id.split("center")[ID_IDX])
@@ -162,6 +215,7 @@ class MultiTrafficLightGridPOEnvPL(MultiTrafficLightGridPOEnv):
                 # get vehicle ids in incoming edge
                 observed_ids = \
                     self.get_id_within_dist(edge_, direction="ahead")
+                all_ids_incoming[rl_id] += observed_ids
 
                 # get ids in outgoing edge
                 observed_ids_behind = \
@@ -177,25 +231,91 @@ class MultiTrafficLightGridPOEnvPL(MultiTrafficLightGridPOEnv):
             # for each incoming edge, store the pressure terms to be used in compute reward
             self.edge_pressure_dict[rl_id] = edge_pressure
 
+            # initialize obs arrays
+            veh_positions = np.zeros(self.cars_in_scope)
+            relative_speeds = np.zeros(self.cars_in_scope)
+            accelerations = np.zeros(self.cars_in_scope)
+
+            # initailize more local obs at intersections
+            num_of_emergency_stops = 0
+            local_waiting_time = 0
+            delays = 0
+
+            i = 0
+            for all_veh_ids in all_ids_incoming[rl_id]:
+
+                local_waiting_time += self.k.kernel_api.vehicle.getWaitingTime(all_veh_ids)
+                veh_positions[i] = self.k.vehicle.get_position(all_veh_ids)
+                relative_speeds[i] = self.k.kernel_api.vehicle.getSpeed(all_veh_ids) /\
+                                     self.k.kernel_api.vehicle.getMaxSpeed(all_veh_ids)
+                num_of_emergency_stops += self.k.kernel_api.vehicle.getAcceleration(all_veh_ids) < -4.5
+                accelerations[i] = self.k.kernel_api.vehicle.getAcceleration(all_veh_ids)
+                delays += self.k.kernel_api.vehicle.getAllowedSpeed(all_veh_ids) - self.k.kernel_api.vehicle.getSpeed(all_veh_ids)
+                i += 1
+
+            light_states = self.k.traffic_light.get_state(rl_id)
+
+            if self.step_counter == 1:
+                self.current_state[rl_id] = light_states
+            if self.step_counter > 1:
+                self.prev_state[rl_id] = self.current_state[rl_id]
+                self.current_state[rl_id] = light_states
+
+            if light_states == "GrGr":
+                light_states_ = [1]
+            elif light_states == ["yryr"]:
+                light_states_ = [0.6]
+            else:
+                light_states_ = [0.2]
+
+            self.waiting_times[rl_id] = local_waiting_time
+            self.num_of_emergency_stops[rl_id] = num_of_emergency_stops
+            self.delays[rl_id] = delays
+
             observation = np.array(np.concatenate(
-                [edge_pressure,
+                [veh_positions,
+                 relative_speeds,
+                 accelerations,
                  local_edge_numbers,
                  direction[local_id_nums],
-                 currently_yellow[local_id_nums]
+                 light_states_,
                  ]))
-            obs.update({rl_id: observation})
 
-        return obs
+            obs.update({rl_id: observation})
+        final_obs = np.concatenate(list((obs.values())))
+        # print(final_obs)
+        print(np.shape(final_obs))
+        return final_obs
 
     def compute_reward(self, rl_actions, **kwargs):
         """See class definition."""
         if rl_actions is None:
             return {}
         rews = {}
-        for rl_id in rl_actions.keys():
-            # get edge pressures
-            rews[rl_id] = -sum(self.edge_pressure_dict[rl_id])
-        return rews
+        for rl_id, rl_action in rl_actions.items():
+
+            if self.step_counter == 1:
+                changed = 0
+            elif self.step_counter > 1:
+                if self.prev_state[rl_id] == self.current_state[rl_id]:
+                    changed = 0
+                else:
+                    changed = 1
+
+            if self.step_counter == 1:
+                self.num_of_switch_actions[rl_id] = [changed]
+            elif self.step_counter < 121:
+                self.num_of_switch_actions[rl_id] += [changed]
+            else:
+                self.num_of_switch_actions[rl_id] = self.num_of_switch_actions[rl_id][1:] + [changed]
+
+            rews[rl_id] = - (0.1 * sum(self.num_of_switch_actions[rl_id]) +
+                                 0.2 * self.num_of_emergency_stops[rl_id] +
+                                 0.3 * self.delays[rl_id] +
+                                 0.3 * self.waiting_times[rl_id]/60
+                                 )
+        final_rews = sum(list((rews.values())))
+        return final_rews
 
     @property
     def observation_space(self):
@@ -208,8 +328,7 @@ class MultiTrafficLightGridPOEnvPL(MultiTrafficLightGridPOEnv):
         tl_box = Box(
             low=-np.inf,
             high=np.inf,
-            # hardcoded in for 1 x 3 traffic light
-            shape=(18,),
+            shape=(self.obs_shape,),
             dtype=np.float32)
         return tl_box
 
@@ -217,7 +336,7 @@ class MultiTrafficLightGridPOEnvPL(MultiTrafficLightGridPOEnv):
     def action_space(self):
         """See class definition."""
         if self.discrete:
-            return Discrete(2)
+            return Discrete(2 * self.num_traffic_lights)
         else:
             return Box(
                 low=-1,
@@ -328,8 +447,8 @@ class MultiTrafficLightGridPOEnvPL(MultiTrafficLightGridPOEnv):
         next_observation, reward, done, infos = super().step(rl_actions)
 
         # log average reward and average travel times if simulation is over
-        self.rew_list += list(reward.values())
-        if done["__all__"]:
+        self.rew_list += [reward]
+        if done:
             # current training iteration
             iter_ = self.get_training_iter()
             # log average travel time
@@ -345,8 +464,20 @@ class MultiTrafficLightGridPOEnvPL(MultiTrafficLightGridPOEnv):
 
         Issues action for each traffic light agent.
         """
-        for rl_id, rl_action in rl_actions.items():
-            i = int(rl_id.split("center")[ID_IDX])
+        if sumo_actuated_baseline:
+            # return
+            if not os.path.isfile(full_path):
+                return
+            else:
+                # read csv
+                df = pd.read_csv(full_path, index_col=False)
+                n_iter = df.training_iteration.iat[-1]
+
+            if n_iter < 6:
+                return
+        i = 0
+        for rl_action in rl_actions:
+
             if self.discrete:
                 action = rl_action
             else:
@@ -377,6 +508,7 @@ class MultiTrafficLightGridPOEnvPL(MultiTrafficLightGridPOEnv):
                     self.last_change[i] = 0.0
                     self.direction[i] = not self.direction[i]
                     self.currently_yellow[i] = 1
+            i += 1
 
     def log_travel_times(self, rl_actions, iter_):
         """log average travel time to tensorboard
@@ -418,7 +550,22 @@ class MultiTrafficLightGridPOEnvPL(MultiTrafficLightGridPOEnv):
         # get average of full trip durations
         avg = info.travel_times.mean()
         print("avg_travel_time = " + str(avg))
+        print("arrived cars = {}".format(len(info.travel_times)))
+        print("last car at = {}".format(max(info.arrival)))
+        if save_plots:
+            plt.hist(info.travel_times, bins=150)
+            plt.xlabel("Travel Times (sec)")
+            plt.ylabel("Number of vehicles/frequency")
+            plt.title("1x3 {} Travel Time Distribution\n "
+                      "{} Avg Travel Time \n"
+                      " {} arrived cars,  last car at {}".format(exp_being_run,
+                                                                 int(avg),
+                                                                 len(info.travel_times),
+                                                                 max(info.arrival)))
+            plt.savefig("{}.png".format(exp_being_run))
+            # plt.show()
         self.writer.add_scalar(self.exp_name + '/travel_times ' + string, avg, n_iter)
+        self.writer.add_scalar(self.exp_name + '/arrived cars ' + string, len(info.travel_times), n_iter)
 
     def log_rewards(self, rew, action, during_simulation=False, n_iter=None):
         """log current reward during simulation or average reward after simulation to tensorboard
@@ -467,10 +614,6 @@ class MultiTrafficLightGridPOEnvPL(MultiTrafficLightGridPOEnv):
             value of training iteration currently being simulated
 
         """
-        filename = "/iterations_{}_{}.csv".format(self.look_ahead, demand)
-        root_dir = os.path.expanduser('~')
-        file_location = root_dir + '/ray_results/grid1x3-trail'
-        full_path = file_location + filename
 
         # check if file exists in directory
         if not os.path.isfile(full_path):
@@ -494,4 +637,4 @@ class MultiTrafficLightGridPOEnvPL(MultiTrafficLightGridPOEnv):
             # convert to csv
             file_to_convert.to_csv(full_path, index=False)
 
-            return n_iter
+            return n_iter+1
