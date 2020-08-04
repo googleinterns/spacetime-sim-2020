@@ -1,13 +1,24 @@
 """Grid example."""
 from flow.controllers import GridRouter
 from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams
-from flow.core.params import VehicleParams
 from flow.core.params import TrafficLightParams
-from flow.core.params import SumoCarFollowingParams
-from flow.core.params import InFlows
-from flow.envs import TrafficLightGridPOEnv, MyGridEnv
+from flow.core.params import InFlows, SumoCarFollowingParams, VehicleParams
+from flow.envs.ring.accel import AccelEnv, ADDITIONAL_ENV_PARAMS
+from flow.envs.centralized_single_agent_presslight import TrafficLightGridPOEnv, MyGridEnv
+from flow.envs.multiagent.decentralized_multi_light_thesis import MultiTrafficLightGridPOEnvPL
+# from flow.envs.centralized_multi_agent_thesis import TrafficLightSingleMultiEnv
 from flow.networks import TrafficLightGridNetwork
-from flow.envs.multiagent import MultiTrafficLightGridPOEnvPL
+from flow.controllers import SimCarFollowingController, GridRouter
+import random
+import numpy as np
+
+# # # exp 1
+arterial = 600
+side_street = 180
+
+# # exp 2
+arterial = 1400
+side_street = 420
 
 
 WHITE = (255, 255, 255)
@@ -16,23 +27,18 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 
 USE_INFLOWS = True
-ADDITIONAL_ENV_PARAMS = {
-        'target_velocity': 35,
-        'switch_time': 3.0, # min switch time
-        'num_observed': 1, # num of cars we can observe
-        'discrete': False,
-        'tl_type': 'controlled' # actuated by SUMO
-    }
-v_enter = 40
+
+
+v_enter = 5
 inner_length = 240
 long_length = 240
 short_length = 240
 n_rows = 1
 n_columns = 3
-num_cars_left = 0
-num_cars_right = 0
-num_cars_top = 0
-num_cars_bot = 0
+num_cars_left = 0 #up
+num_cars_right = 0 #bottom
+num_cars_top = 0 #right
+num_cars_bot = 0#left
 tot_cars = (num_cars_left + num_cars_right) * n_columns \
            + (num_cars_top + num_cars_bot) * n_rows
 
@@ -64,19 +70,20 @@ def gen_edges(col_num, row_num):
     list of str
         names of all the outer edges
     """
-    edges = []
+    edges_col = []
+    edges_row = []
 
     # build the left and then the right edges
     for i in range(col_num):
-        edges += ['left' + str(row_num) + '_' + str(i)]
-        edges += ['right' + '0' + '_' + str(i)]
+        edges_col  += ['left' + str(row_num) + '_' + str(i)]
+        edges_col  += ['right' + '0' + '_' + str(i)]
 
     # build the bottom and then top edges
     for i in range(row_num):
-        edges += ['bot' + str(i) + '_' + '0']
-        edges += ['top' + str(i) + '_' + str(col_num)]
+        edges_row += ['bot' + str(i) + '_' + '0']
+        edges_row += ['top' + str(i) + '_' + str(col_num)]
 
-    return edges
+    return edges_col, edges_row
 
 
 def get_flow_params(col_num, row_num, additional_net_params):
@@ -102,25 +109,87 @@ def get_flow_params(col_num, row_num, additional_net_params):
     initial = InitialConfig(
         spacing='custom', lanes_distribution=float('inf'), shuffle=True)
 
-    inflow = InFlows()
-    outer_edges = gen_edges(col_num, row_num)
-    for i in range(len(outer_edges)):
-        if outer_edges[i].__contains__("top") or outer_edges[i].__contains__("bot"):
-            vph = 600
-        else:
-            vph = 180
-        inflow.add(
-            veh_type='human',
-            edge=outer_edges[i],
-            vehs_per_hour=vph,
-            depart_lane='free',
-            depart_speed=10)
+    col_edges, row_edges = gen_edges(col_num, row_num)
+
+    inflow = gen_demand(3600, arterial, side_street, col_edges, row_edges)
 
     net = NetParams(
         inflows=inflow,
         additional_params=additional_net_params)
 
     return initial, net
+
+
+def gen_demand(horizon,
+               num_veh_per_row,
+               num_veh_per_column,
+               col_edges,
+               row_edges,
+               is_uniform=True):
+
+    # time = 50
+    inflow = InFlows()
+    rows = row_edges
+    col = col_edges
+    mean = horizon / 2
+    std = 10
+    # vehicle_str = dict()
+    row_time = []
+    row_edges = []
+    col_time = []
+    col_edges = []
+
+    # for each row
+    for i in np.arange(num_veh_per_row):
+        # pick time
+        if is_uniform:
+            row_time += [random.choice(range(1, horizon))]
+        else:
+            # we center demand around horizon/2
+            row_time += [get_truncated_normal(mean, std, 1, horizon)]
+
+        # pick edge randomly
+        row_edges += [random.choice(rows)]
+
+        # for each column
+    for i in np.arange(num_veh_per_column):
+        # pick time
+        if is_uniform:
+            col_time += [random.choice(range(1, horizon))]
+        else:
+            # we center demand around horizon/2
+            col_time += [get_truncated_normal(mean, std, 1, horizon)]
+
+        # pick edge randomly
+        col_edges += [random.choice(col)]
+
+    # merge lists
+    merged_times = row_time + col_time
+    merged_edges = row_edges + col_edges
+
+    sorted_times_and_edges = sorted(zip(merged_times, merged_edges), key=lambda x: x[0])
+
+    # add inflow
+    for time, edge in sorted_times_and_edges:
+        inflow.add(
+            veh_type='human',
+            edge=edge,
+            probability=1,
+            depart_lane='free',
+            depart_speed=5,
+            begin=time,
+            number=1)
+
+
+    return inflow
+
+
+def get_truncated_normal(mean=0, sd=1800, low=0, upp=10):
+    while True:
+        rd = random.normalvariate(mean, sd)
+        if rd >= low and rd <= upp:
+            return int(rd)
+
 
 
 def get_non_flow_params(enter_speed, add_net_params):
@@ -154,16 +223,26 @@ def get_non_flow_params(enter_speed, add_net_params):
 
 
 vehicles = VehicleParams()
+# vehicles.add(
+#     veh_id="human",
+#     routing_controller=(GridRouter, {}),
+#     car_following_params=SumoCarFollowingParams(
+#         min_gap=2.5,
+#         decel=7.5,  # avoid collisions at emergency stops
+#     ),
+#     num_vehicles=tot_cars)
 vehicles.add(
     veh_id="human",
-    routing_controller=(GridRouter, {}),
+    acceleration_controller=(SimCarFollowingController, {}),
     car_following_params=SumoCarFollowingParams(
         min_gap=2.5,
         decel=7.5,  # avoid collisions at emergency stops
+        speed_mode="right_of_way",
     ),
-    num_vehicles=tot_cars)
+    routing_controller=(GridRouter, {}),
+    num_vehicles=0)
 
-env_params = EnvParams(additional_params=ADDITIONAL_ENV_PARAMS)
+# env_params = EnvParams(additional_params=ADDITIONAL_ENV_PARAMS)
 
 tl_logic = TrafficLightParams(baseline=False)
 phases = [{
@@ -172,7 +251,7 @@ phases = [{
     "maxDur": "45",
     "state": "GrGr"
 }, {
-    "duration": "6",
+    "duration": "4",
     "minDur": "3",
     "maxDur": "6",
     "state": "yryr"
@@ -182,18 +261,18 @@ phases = [{
     "maxDur": "45",
     "state": "rGrG"
 }, {
-    "duration": "6",
+    "duration": "4",
     "minDur": "3",
     "maxDur": "6",
     "state": "ryry"
 }]
-# tl_logic.add("center0", phases=phases, programID=1)
-# tl_logic.add("center1", phases=phases, programID=1)
-# tl_logic.add("center2", phases=phases, programID=1, tls_type="actuated")
+tl_logic.add("center0", phases=phases, programID=1, tls_type="actuated")
+tl_logic.add("center1", phases=phases, programID=1, tls_type="actuated")
+tl_logic.add("center2", phases=phases, programID=1, tls_type="actuated")
 
 additional_net_params = {
     "grid_array": grid_array,
-    "speed_limit": 35,
+    "speed_limit": 11,
     "horizontal_lanes": 1,
     "vertical_lanes": 1
 }
@@ -215,7 +294,6 @@ flow_params = dict(
 
     # name of the flow environment the experiment is running on
     env_name=MyGridEnv,
-    # env_name=MultiTrafficLightGridPOEnvPL,
 
     # name of the network class the experiment is running on
     network=TrafficLightGridNetwork,
@@ -224,25 +302,26 @@ flow_params = dict(
     simulator='traci',
 
     # sumo-related parameters (see flow.core.params.SumoParams)
-    sim=SumoParams(
+    sim=SumoParams(restart_instance=True,
         sim_step=1,
         render=False,
         emission_path='~/flow/data',
     ),
 
     # environment related parameters (see flow.core.params.EnvParams)
+
     env=EnvParams(
-        horizon=100,
-        additional_params=ADDITIONAL_ENV_PARAMS.copy(),
-        # additional_params={
-        #     "target_velocity": 50,
-        #     "switch_time": 3,
-        #     "num_observed": 2,
-        #     "discrete": True,
-        #     "tl_type": "actuated",
-        #     "num_local_edges": 4,
-        #     "num_local_lights": 4,
-        # },
+        horizon=5400,
+        additional_params={
+            "target_velocity": 11,
+            "switch_time": 4,
+            "num_observed": 2,
+            "discrete": True,
+            "tl_type": "actuated",
+            "num_local_edges": 4,
+            "num_local_lights": 4,
+        }
+        # additional_params=ADDITIONAL_ENV_PARAMS,
     ),
 
     # network-related parameters (see flow.core.params.NetParams and the
@@ -259,5 +338,5 @@ flow_params = dict(
 
     # traffic lights to be introduced to specific nodes (see
     # flow.core.params.TrafficLightParams)
-    # tls=tl_logic,
+    tls=tl_logic,
 )
