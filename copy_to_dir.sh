@@ -16,9 +16,7 @@ cp ~/flow/flow/envs/multiagent/decentralized_multi_light_thesis.py Gilbert_code/
 
 #experiments
 #non-rl
-cp ~/flow/examples/exp_configs/non_rl/grid1x1.py Gilbert_code/single_agent
-cp ~/flow/examples/exp_configs/non_rl/grid1x3.py Gilbert_code/multi_agent
-cp ~/flow/examples/exp_configs/non_rl/grid2x2.py Gilbert_code/multi_agent
+cp ~/flow/examples/exp_configs/non_rl/grid_simulation_non_rl.py Gilbert_code/multi_agent
 
 #rl
 cp ~/flow/examples/exp_configs/rl/singleagent/grid1x1_rl.py Gilbert_code/single_agent
