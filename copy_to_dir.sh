@@ -1,15 +1,18 @@
 #!/bin/bash
-# copy changed files in flow/ to Gilbert_code/
+#copy changed files in flow/ to Gilbert_code/
 #envs
-cp ~/flow/flow/envs/traffic_light_grid.py Gilbert_code/single_agent
+#cp ~/flow/flow/envs/traffic_light_grid.py Gilbert_code/single_agent
 cp ~/flow//flow/envs/__init__.py Gilbert_code/single_agent
-cp ~/flow/flow/envs/multiagent/traffic_light_grid.py Gilbert_code/multi_agent
+#cp ~/flow/flow/envs/multiagent/traffic_light_grid.py Gilbert_code/multi_agent
 cp ~/flow/flow/envs/multiagent/__init__.py Gilbert_code/multi_agent
 
 #changes added
-cp ~/flow/flow/envs/presslight_single_agent.py Gilbert_code/single_agent
-cp ~/flow/flow/envs/multiagent/presslight_multi_agent.py Gilbert_code/multi_agent
-
+#cp ~/flow/flow/envs/presslight_single_agent.py Gilbert_code/single_agent
+#cp ~/flow/flow/envs/multiagent/presslight_multi_agent.py Gilbert_code/multi_agent
+cp ~/flow/flow/envs/centralized_multi_agent_thesis.py Gilbert_code/single_agent
+cp ~/flow/flow/envs/centralized_single_agent_presslight.py Gilbert_code/single_agent
+cp ~/flow/flow/envs/multiagent/decentralized_multi_light_presslight.py Gilbert_code/multi_agent
+cp ~/flow/flow/envs/multiagent/decentralized_multi_light_thesis.py Gilbert_code/multi_agent
 
 #experiments
 #non-rl
