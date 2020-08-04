@@ -37,7 +37,7 @@ inner_length = 240
 long_length = 240
 short_length = 240
 n_rows = 1
-n_columns = 3
+n_columns = 1
 num_cars_left = 0 #up
 num_cars_right = 0 #bottom
 num_cars_top = 0 #right
@@ -101,9 +101,9 @@ phases = [{
     "maxDur": "6",
     "state": "ryry"
 }]
-tl_logic.add("center0", phases=phases, programID=1, tls_type="actuated")
-tl_logic.add("center1", phases=phases, programID=1, tls_type="actuated")
-tl_logic.add("center2", phases=phases, programID=1, tls_type="actuated")
+# tl_logic.add("center0", phases=phases, programID=1, tls_type="actuated")
+# tl_logic.add("center1", phases=phases, programID=1, tls_type="actuated")
+# tl_logic.add("center2", phases=phases, programID=1, tls_type="actuated")
 
 additional_net_params = {
     "grid_array": grid_array,

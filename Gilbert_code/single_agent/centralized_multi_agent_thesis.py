@@ -31,7 +31,7 @@ log_rewards_during_iteration = False
 sumo_actuated_baseline = False
 save_plots = False
 exp_being_run = "masters demand sumo"
-
+experiment = "Presslight"
 # choose look-ahead distance
 # look_ahead = 80
 # look_ahead = 160
@@ -127,24 +127,43 @@ class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
         self.num_of_switch_actions = dict()
         self.current_state = dict()
         self.prev_state = dict()
+        self.obs_shape = 14 * self.num_traffic_lights
 
-        if look_ahead == 43:
-            self.cars_in_scope = 24
-            self.obs_shape = (24 * 3 + 10) * self.num_traffic_lights
+        if experiment == "Presslight":
+            self.obs_shape = 14 * self.num_traffic_lights
+        elif experiment == "Thesis":
+            if look_ahead == 43:
+                self.cars_in_scope = 24
+                self.obs_shape = (24 * 3 + 10) * self.num_traffic_lights
 
-            # elif look_ahead == 80:
-            #     cars_in_scope = """TODO"""
-            #     obs_shape = (124 * 3 + 10) * self.num_traffic_lights
-            #
-            # elif look_ahead == 160:
-            #     cars_in_scope = """TODO"""
-            #     obs_shape = ("""TODO""" * 3 + 10) * self.num_traffic_lights
+                # elif look_ahead == 80:
+                #     cars_in_scope = """TODO"""
+                #     obs_shape = (124 * 3 + 10) * self.num_traffic_lights
+                #
+                # elif look_ahead == 160:
+                #     cars_in_scope = """TODO"""
+                #     obs_shape = ("""TODO""" * 3 + 10) * self.num_traffic_lights
 
-        elif look_ahead == 240:
-            self.cars_in_scope = 124
-            self.obs_shape = (124 * 3 + 10) * self.num_traffic_lights
+            elif look_ahead == 240:
+                self.cars_in_scope = 124
+                self.obs_shape = (124 * 3 + 10) * self.num_traffic_lights
+        print(self.obs_shape)
 
     def get_state(self):
+        if experiment == "Presslight":
+            return self.get_state_presslight()
+
+        elif experiment == "Thesis":
+            return self.get_state_thesis()
+
+    def compute_reward(self, rl_actions, **kwargs):
+        if experiment == "Presslight":
+            return self.compute_reward_presslight(rl_actions, **kwargs)
+
+        elif experiment == "Thesis":
+            return self.compute_reward_thesis(rl_actions, **kwargs)
+
+    def get_state_thesis(self):
         """Observations for each traffic light agent.
 
         :return: dictionary which contains agent-wise observations as follows:
@@ -287,7 +306,7 @@ class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
         print(np.shape(final_obs))
         return final_obs
 
-    def compute_reward(self, rl_actions, **kwargs):
+    def compute_reward_thesis(self, rl_actions, **kwargs):
         """See class definition."""
         if rl_actions is None:
             return {}
@@ -317,6 +336,73 @@ class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
         final_rews = sum(list((rews.values())))
         return final_rews
 
+    def get_state_presslight(self):
+        """See parent class.
+
+        Returns edge pressures of an intersection, edge_numbers,
+         traffic light state. This is partially observed
+        """
+
+        self.edge_pressure = []
+        edge_number = []
+        observed_ids_ahead = []
+        observed_ids_behind = []
+
+        # collect edge pressures for single intersection
+        for rl_id, edges in self.network.node_mapping:
+            incoming_edges = edges
+            for edge_ in incoming_edges:
+                # for each incoming edge, log the incoming and outgoing vehicle ids
+                if self.k.network.rts[edge_]:
+                    index_ = self.k.network.rts[edge_][0][0].index(edge_)
+                    observed_ids_ahead = \
+                        self.get_id_within_dist(edge_, direction="ahead")
+                    outgoing_lane = self.k.network.rts[edge_][0][0][index_+1]
+                    observed_ids_behind = self.get_id_within_dist(outgoing_lane, direction="behind")
+
+                # color vehicles
+                self.color_vehicles(observed_ids_ahead, CYAN)
+                self.color_vehicles(observed_ids_behind, RED)
+                # compute pressure
+                self.edge_pressure += [len(observed_ids_ahead) - len(observed_ids_behind)]
+                # print(self.edge_pressure )
+
+            # assigning unique number id for each incoming edge
+            for edge in edges:
+                edge_number += \
+                    [self._convert_edge(edge) /
+                     (self.k.network.network.num_edges - 1)
+                     ]
+
+        light_states = self.k.traffic_light.get_state(rl_id)
+        if light_states == "GrGr":
+            # green state
+            light_states_ = [1]
+        elif light_states == ["yryr"]:
+            # yellow state
+            light_states_ = [0.6]
+        else:
+            # all other states are red
+            light_states_ = [0.2]
+
+        observation = np.array(np.concatenate(
+            [self.edge_pressure,
+             edge_number,
+             self.direction.flatten().tolist(),
+             light_states_
+             ]))
+
+        return observation
+
+    def compute_reward_presslight(self, rl_actions, **kwargs):
+        """See class definition."""
+
+        rew = -sum(self.edge_pressure)
+        if log_rewards_during_iteration:
+            # write current reward to tensorboard (during simulation)
+            self.log_rewards(rew, rl_actions, during_simulation=True)
+        return rew
+
     @property
     def observation_space(self):
         """State space that is partially observed.
@@ -335,14 +421,7 @@ class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
     @property
     def action_space(self):
         """See class definition."""
-        if self.discrete:
-            return Discrete(2 * self.num_traffic_lights)
-        else:
-            return Box(
-                low=-1,
-                high=1,
-                shape=(1,),
-                dtype=np.float32)
+        return Discrete(2 * self.num_traffic_lights)
 
     def color_vehicles(self, ids, color):
         """Color observed vehicles to visualize during simulation
