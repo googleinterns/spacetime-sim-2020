@@ -3,6 +3,10 @@ from xml.etree import ElementTree
 import random
 import matplotlib.pyplot as plt
 from flow.core.util import ensure_dir
+import os
+from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams
+from flow.core.params import InFlows
+import numpy as np
 
 
 def trip_info_emission_to_csv(emission_path, output_path=None):
@@ -107,4 +111,171 @@ def generate_demands(segment_id_pairs, network_name, horizon, is_uniform, num_of
         plt.close()
 
     return sorted_ids, vehicle_str
+
+
+
+def gen_edges(col_num, row_num):
+    """Generate the names of the outer edges in the grid network.
+
+    Parameters
+    ----------
+    col_num : int
+        number of columns in the grid
+    row_num : int
+        number of rows in the grid
+
+    Returns
+    -------
+    list of str
+        names of all the outer edges
+    """
+    edges_col = []
+    edges_row = []
+
+    # build the left and then the right edges
+    for i in range(col_num):
+        edges_col  += ['left' + str(row_num) + '_' + str(i)]
+        edges_col  += ['right' + '0' + '_' + str(i)]
+
+    # build the bottom and then top edges
+    for i in range(row_num):
+        edges_row += ['bot' + str(i) + '_' + '0']
+        edges_row += ['top' + str(i) + '_' + str(col_num)]
+
+    return edges_col, edges_row
+
+
+def get_flow_params(col_num, row_num, horizon, num_veh_per_row, num_vehcile_per_column, additional_net_params):
+    """Define the network and initial params in the presence of inflows.
+
+    Parameters
+    ----------
+    col_num : int
+        number of columns in the grid
+    row_num : int
+        number of rows in the grid
+    additional_net_params : dict
+        network-specific parameters that are unique to the grid
+
+    Returns
+    -------
+    flow.core.params.InitialConfig
+        parameters specifying the initial configuration of vehicles in the
+        network
+    flow.core.params.NetParams
+        network-specific parameters used to generate the network
+    """
+    initial = InitialConfig(
+        spacing='custom', lanes_distribution=float('inf'), shuffle=True)
+
+    col_edges, row_edges = gen_edges(col_num, row_num)
+
+    inflow = gen_demand(horizon, num_veh_per_row, num_vehcile_per_column, col_edges, row_edges)
+
+    net = NetParams(
+        inflows=inflow,
+        additional_params=additional_net_params)
+
+    return initial, net
+
+
+def gen_demand(horizon,
+               num_veh_per_row,
+               num_veh_per_column,
+               col_edges,
+               row_edges,
+               is_uniform=True):
+
+    # time = 50
+    inflow = InFlows()
+    rows = row_edges
+    col = col_edges
+    mean = horizon / 2
+    std = 10
+    # vehicle_str = dict()
+    row_time = []
+    row_edges = []
+    col_time = []
+    col_edges = []
+
+    # for each row
+    for _ in np.arange(num_veh_per_row):
+        # pick time
+        if is_uniform:
+            row_time += [random.choice(range(1, horizon))]
+        else:
+            # we center demand around horizon/2
+            row_time += [get_truncated_normal(mean, std, 1, horizon)]
+
+        # pick edge randomly
+        row_edges += [random.choice(rows)]
+
+        # for each column
+    for i in np.arange(num_veh_per_column):
+        # pick time
+        if is_uniform:
+            col_time += [random.choice(range(1, horizon))]
+        else:
+            # we center demand around horizon/2
+            col_time += [get_truncated_normal(mean, std, 1, horizon)]
+
+        # pick edge randomly
+        col_edges += [random.choice(col)]
+
+    # merge lists
+    merged_times = row_time + col_time
+    merged_edges = row_edges + col_edges
+
+    sorted_times_and_edges = sorted(zip(merged_times, merged_edges), key=lambda x: x[0])
+
+    # add inflow
+    for time, edge in sorted_times_and_edges:
+        inflow.add(
+            veh_type='human',
+            edge=edge,
+            probability=1,
+            depart_lane='free',
+            depart_speed=5,
+            begin=time,
+            number=1)
+
+
+    return inflow
+
+
+def get_truncated_normal(mean=0, sd=1800, low=0, upp=10):
+    while True:
+        rd = random.normalvariate(mean, sd)
+        if rd >= low and rd <= upp:
+            return int(rd)
+
+
+def get_non_flow_params(enter_speed, add_net_params):
+    """Define the network and initial params in the absence of inflows.
+
+    Note that when a vehicle leaves a network in this case, it is immediately
+    returns to the start of the row/column it was traversing, and in the same
+    direction as it was before.
+
+    Parameters
+    ----------
+    enter_speed : float
+        initial speed of vehicles as they enter the network.
+    add_net_params: dict
+        additional network-specific parameters (unique to the grid)
+
+    Returns
+    -------
+    flow.core.params.InitialConfig
+        parameters specifying the initial configuration of vehicles in the
+        network
+    flow.core.params.NetParams
+        network-specific parameters used to generate the network
+    """
+    additional_init_params = {'enter_speed': enter_speed}
+    initial = InitialConfig(
+        spacing='custom', additional_params=additional_init_params)
+    net = NetParams(additional_params=add_net_params)
+
+    return initial, net
 
