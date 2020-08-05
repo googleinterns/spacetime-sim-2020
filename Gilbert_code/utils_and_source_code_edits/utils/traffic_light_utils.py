@@ -55,65 +55,6 @@ def trip_info_emission_to_csv(emission_path, output_path=None):
     return out_data
 
 
-def get_truncated_normal(mean=0, sd=1800, low=0, upp=10):
-    while True:
-        rd = random.normalvariate(mean, sd)
-        if rd >= low and rd <= upp:
-            return int(rd)
-
-
-def generate_demands(segment_id_pairs, network_name, horizon, is_uniform, num_of_vehicles, save_hist=True):
-
-    """Generate a xml file of routes.
-    format: <vehicle id="0" departLane="?" arrivalLane="?" depart="0"/>
-    Args:
-      is_uniform: bool, if false then generate a normal distribuiton
-      num_of_vehicles: total vehicles in an hour.
-      segment_id_pairs: a list of pair of string [(start_segment, end_segment), ...]
-        where start_segment and end_segment is the segment id in sumo.
-    Returns:
-      A string of printable xml route file.
-    """
-    mean = horizon / 2
-    std = 10
-    vehicle_str = dict()
-    for i in range(num_of_vehicles):
-        vehicle_id = "v_%d" % i
-        # select one from segemtn_id_pairs as depart & arrival
-        route = random.choice(segment_id_pairs)
-
-        if is_uniform:
-            time = random.choice(range(0, horizon))
-        else:
-            # we center demand around horizon/2
-            time = get_truncated_normal(mean, std, 0, horizon)
-
-        vehicle_str[time] = dict(name=vehicle_id, vtype="human", route=route, depart=str(time),
-                                 departSpeed="5")
-    sorted_ids = sorted(vehicle_str.keys())
-
-    # store histogram of demand
-    if save_hist:
-        home_dir = os.path.expanduser('~')
-        ensure_dir('%s' % home_dir + '/ray_results/real_time_metrics/hist')
-        hist_path = home_dir + '/ray_results/real_time_metrics/hist/'
-
-        if is_uniform:
-            title_flag = "Random Distribution"
-        else:
-            title_flag = "Peak Distribution: Mean = {} secs, Standard Dev ={} secs,".format(mean, std)
-
-        plt.hist(vehicle_str.keys(), edgecolor='white')
-        plt.ylabel("Frequency")
-        plt.xlabel("Depart time INTO the Network (secs)")
-        plt.title("Demand Data \n {} vehicles \n".format(num_of_vehicles) + title_flag)
-        plt.savefig(hist_path + '%s.png' % network_name)
-        plt.close()
-
-    return sorted_ids, vehicle_str
-
-
-
 def gen_edges(col_num, row_num):
     """Generate the names of the outer edges in the grid network.
 
@@ -134,8 +75,8 @@ def gen_edges(col_num, row_num):
 
     # build the left and then the right edges
     for i in range(col_num):
-        edges_col  += ['left' + str(row_num) + '_' + str(i)]
-        edges_col  += ['right' + '0' + '_' + str(i)]
+        edges_col += ['left' + str(row_num) + '_' + str(i)]
+        edges_col += ['right' + '0' + '_' + str(i)]
 
     # build the bottom and then top edges
     for i in range(row_num):
@@ -145,7 +86,7 @@ def gen_edges(col_num, row_num):
     return edges_col, edges_row
 
 
-def get_flow_params(col_num, row_num, horizon, num_veh_per_row, num_vehcile_per_column, additional_net_params):
+def get_flow_params(col_num, row_num, horizon, num_veh_per_row, num_veh_per_column, additional_net_params):
     """Define the network and initial params in the presence of inflows.
 
     Parameters
@@ -154,6 +95,12 @@ def get_flow_params(col_num, row_num, horizon, num_veh_per_row, num_vehcile_per_
         number of columns in the grid
     row_num : int
         number of rows in the grid
+    horizon : int
+        time period is seconds over which to generate inflows
+    num_veh_per_row : int
+        total vehicles to be inserted via each row in the given time horizon.
+    num_veh_per_column : int
+        total vehicles to be inserted via each column in the given time horizon.
     additional_net_params : dict
         network-specific parameters that are unique to the grid
 
@@ -170,7 +117,7 @@ def get_flow_params(col_num, row_num, horizon, num_veh_per_row, num_vehcile_per_
 
     col_edges, row_edges = gen_edges(col_num, row_num)
 
-    inflow = gen_demand(horizon, num_veh_per_row, num_vehcile_per_column, col_edges, row_edges)
+    inflow = gen_demand(horizon, num_veh_per_row, num_veh_per_column, col_edges, row_edges)
 
     net = NetParams(
         inflows=inflow,
@@ -186,13 +133,33 @@ def gen_demand(horizon,
                row_edges,
                is_uniform=True):
 
-    # time = 50
+    """Generate an inflow object of demands.
+    format: object (see imported class: flow.core.params.InFlows)
+            veh_type='human',
+            edge="?",
+            probability=1,
+            depart_lane='free',
+            depart_speed=5,
+            begin="?",
+            number=1)
+    Args:
+      horizon: time period is seconds over which to generate inflows
+      num_veh_per_row: total vehicles to be inserted via each row in the given time horizon.
+      num_veh_per_column: total vehicles to be inserted via each column in the given time horizon.
+      col_edges: a list of strings [top_segment,bottom_segment..] of all incoming column segments
+        where each segment is the column segment id in sumo.
+      row_edges: a list of strings [right_segment, left_segment..] of all incoming row segments
+        where each segment is the row segment id in sumo.
+      is_uniform: bool, if false then generate a normal distribution
+    Returns:
+      an inflow object containing predefined demands for FLOW.
+    """
+
     inflow = InFlows()
     rows = row_edges
     col = col_edges
     mean = horizon / 2
     std = 10
-    # vehicle_str = dict()
     row_time = []
     row_edges = []
     col_time = []
@@ -211,7 +178,7 @@ def gen_demand(horizon,
         row_edges += [random.choice(rows)]
 
         # for each column
-    for i in np.arange(num_veh_per_column):
+    for _ in np.arange(num_veh_per_column):
         # pick time
         if is_uniform:
             col_time += [random.choice(range(1, horizon))]
@@ -226,6 +193,7 @@ def gen_demand(horizon,
     merged_times = row_time + col_time
     merged_edges = row_edges + col_edges
 
+    # sort by depart time (SUMO requires them to be in order of time)
     sorted_times_and_edges = sorted(zip(merged_times, merged_edges), key=lambda x: x[0])
 
     # add inflow
@@ -239,11 +207,39 @@ def gen_demand(horizon,
             begin=time,
             number=1)
 
+        # store histogram of demand
+    # if save_hist:
+    #     home_dir = os.path.expanduser('~')
+    #     ensure_dir('%s' % home_dir + '/ray_results/real_time_metrics/hist')
+    #     hist_path = home_dir + '/ray_results/real_time_metrics/hist/'
+    #
+    #     if is_uniform:
+    #         title_flag = "Random Distribution"
+    #     else:
+    #         title_flag = "Peak Distribution: Mean = {} secs, Standard Dev ={} secs,".format(mean, std)
+    #
+    #     plt.hist(vehicle_str.keys(), edgecolor='white')
+    #     plt.ylabel("Frequency")
+    #     plt.xlabel("Depart time INTO the Network (secs)")
+    #     plt.title("Demand Data \n {} vehicles \n".format(num_of_vehicles) + title_flag)
+    #     plt.savefig(hist_path + '%s.png' % network_name)
+    #     plt.close()
 
     return inflow
 
 
 def get_truncated_normal(mean=0, sd=1800, low=0, upp=10):
+    """Generate a peak distribution of values centred at the mean
+    Args:
+        mean: value to center distribution on
+        sd: standard deviation of interest
+        low: lowest value to consider as lower bound when sampling
+        upp: highest value to consider as higher bound when sampling
+
+    Returns:
+        int: randomly selected value given bounds and parameters above
+        """
+
     while True:
         rd = random.normalvariate(mean, sd)
         if rd >= low and rd <= upp:
@@ -278,4 +274,3 @@ def get_non_flow_params(enter_speed, add_net_params):
     net = NetParams(additional_params=add_net_params)
 
     return initial, net
-
