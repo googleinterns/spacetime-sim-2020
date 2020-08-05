@@ -21,7 +21,7 @@ from flow.envs.green_wave_env import GreenWaveTestEnv
 
 # implemented for Presslight single agent
 from flow.envs.centralized_single_agent_presslight import MyGridEnv
-from flow.envs.centralized_multi_agent_thesis import MultiTrafficLightGridPOEnvTH
+from flow.envs.centralized_env import MultiTrafficLightGridPOEnvTH
 __all__ = [
     'Env',
     'AccelEnv',

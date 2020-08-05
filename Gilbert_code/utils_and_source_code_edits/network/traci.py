@@ -804,15 +804,15 @@ class TraCIKernelNetwork(BaseKernelNetwork):
                 else:
                     routes_data.append(_flow(**sumo_inflow))
 
-        ##### Gilbert code below:
-        # create dict demand file
-        sorted_ids, vehicle_str = generate_demands(segment_id_pairs=route_list, network_name=self.network.name, horizon=3600, is_uniform=True, num_of_vehicles=1440)
+        # ##### Gilbert code below:
+        # # create dict demand file
+        # sorted_ids, vehicle_str = generate_demands(segment_id_pairs=route_list, network_name=self.network.name, horizon=3600, is_uniform=True, num_of_vehicles=1440)
+        # #
+        # for entry in sorted_ids:
+        #     # append to existing dict
+        #     routes_data.append(_human_inflow(**vehicle_str[entry]))
         #
-        for entry in sorted_ids:
-            # append to existing dict
-            routes_data.append(_human_inflow(**vehicle_str[entry]))
-
-        ##### Gilbert code above:
+        # ##### Gilbert code above:
 
         # export to xml
         printxml(routes_data, self.cfg_path + self.roufn)
