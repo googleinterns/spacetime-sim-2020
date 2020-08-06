@@ -4,19 +4,19 @@ from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams
 from flow.core.params import TrafficLightParams
 from flow.core.params import InFlows, SumoCarFollowingParams, VehicleParams
 from flow.envs.ring.accel import AccelEnv, ADDITIONAL_ENV_PARAMS
-from flow.envs.centralized_single_agent_presslight import TrafficLightGridPOEnv, MyGridEnv
+# from flow.envs.centralized_single_agent_presslight import TrafficLightGridPOEnv, MyGridEnv
 from flow.envs.centralized_env import MultiTrafficLightGridPOEnvTH
-from flow.envs.multiagent.decentralized_multi_light_thesis import MultiTrafficLightGridPOEnvPL
+from flow.envs.multiagent.decentralized_env import MultiTrafficLightGridPOEnvPL
 # from flow.envs.centralized_multi_agent_thesis import TrafficLightSingleMultiEnv
 from flow.networks import TrafficLightGridNetwork
 from flow.controllers import SimCarFollowingController, GridRouter
 from flow.core.traffic_light_utils import  get_non_flow_params, get_flow_params
 import random
 import numpy as np
-from flow.envs.presslight import PressureCentLightGridEnv
-from flow.envs.thesis import ThesisCentLightGridEnv
+from flow.envs.presslight import PressureCentLightGridEnv, PressureDecentLightGridEnv
+from flow.envs.thesis import ThesisCentLightGridEnv, ThesisDecentLightGridEnv
 
-env_name_ = MultiTrafficLightGridPOEnvTH
+
 # # # exp 1
 arterial = 600
 side_street = 180
@@ -118,15 +118,9 @@ else:
         enter_speed=v_enter,
         add_net_params=additional_net_params)
 
-
-class MyClass(PressureCentLightGridEnv, env_name_):
-    """Inherit class with predefined 'get_state' and 'compute_reward' methods
-    for base env class.
-
-    (predefined_methods_env_class, base_env_class)
-
-    """
-    pass
+env_name_ = MultiTrafficLightGridPOEnvTH, MultiTrafficLightGridPOEnvPL
+press_ = PressureCentLightGridEnv, PressureDecentLightGridEnv
+thesis_ = ThesisCentLightGridEnv, ThesisDecentLightGridEnv
 
 
 flow_params = dict(
@@ -134,7 +128,7 @@ flow_params = dict(
     exp_tag='grid-trail',
 
     # name of the flow environment the experiment is running on
-    env_name=MyClass,
+    env_name=env_name_[0],
 
     # name of the network class the experiment is running on
     network=TrafficLightGridNetwork,
@@ -161,6 +155,7 @@ flow_params = dict(
             "tl_type": "actuated",
             "num_local_edges": 4,
             "num_local_lights": 4,
+            "benchmark": press_[0],
         }
         # additional_params=ADDITIONAL_ENV_PARAMS,
     ),

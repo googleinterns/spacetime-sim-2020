@@ -123,13 +123,26 @@ class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
         self.look_ahead = look_ahead
         self.edge_pressure_dict = None
         self.waiting_times = None
-        self.num_of_emergency_stops= dict()
+        self.num_of_emergency_stops = dict()
         self.delays = dict()
         self.num_of_switch_actions = dict()
         self.current_state = dict()
         self.prev_state = dict()
+        self.benchmark = env_params.additional_params["benchmark"]()
 
+    def compute_reward(self, rl_actions, **kwargs):
 
+        return self.benchmark.compute_reward(rl_actions, **kwargs)
+
+    def get_state(self):
+
+        return self.benchmark.get_state(kernel=self.k,
+                                        network=self.network,
+                                        color_vehicles=self.color_vehicles,
+                                        _get_relative_node=self._get_relative_node,
+                                        direction=self.direction,
+                                        currently_yellow=self.currently_yellow,
+                                        get_id_within_dist=self.get_id_within_dist)
     @property
     def observation_space(self):
         """State space that is partially observed.
