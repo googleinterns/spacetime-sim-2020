@@ -20,7 +20,7 @@ from flow.envs.green_wave_env import PO_TrafficLightGridEnv
 from flow.envs.green_wave_env import GreenWaveTestEnv
 
 # implemented for Presslight single agent
-from flow.envs.centralized_single_agent_presslight import MyGridEnv
+# from flow.envs.centralized_single_agent_presslight import MyGridEnv
 from flow.envs.centralized_env import MultiTrafficLightGridPOEnvTH
 __all__ = [
     'Env',
@@ -39,7 +39,6 @@ __all__ = [
     'BottleneckDesiredVelocityEnv',
     'TestEnv',
     'BayBridgeEnv',
-    'MyGridEnv',  # Gilbert's addition: single agent traffic light
     "MultiTrafficLightGridPOEnvTH",
     # deprecated classes
     'BottleNeckAccelEnv',

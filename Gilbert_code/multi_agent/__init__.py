@@ -13,7 +13,7 @@ from flow.envs.multiagent.merge import MultiAgentMergePOEnv
 from flow.envs.multiagent.i210 import I210MultiEnv
 
 # implemented for Presslight multi_agent
-from flow.envs.multiagent.decentralized_multi_light_thesis import MultiTrafficLightGridPOEnvPL
+from flow.envs.multiagent.decentralized_env import MultiTrafficLightGridPOEnvPL
 
 __all__ = [
     'MultiEnv',

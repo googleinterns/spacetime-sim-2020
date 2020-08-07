@@ -1,11 +1,12 @@
-"""Grid example."""
-from flow.controllers import GridRouter
-from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams
+"""Multi-agent traffic light example (single shared policy)."""
+from ray.rllib.agents.dqn.dqn_policy import DQNTFPolicy
+from ray.tune.registry import register_env
+from flow.utils.registry import make_create_env
+from flow.core.params import SumoParams, EnvParams
 from flow.core.params import TrafficLightParams
-from flow.core.params import InFlows, SumoCarFollowingParams, VehicleParams
+from flow.core.params import SumoCarFollowingParams, VehicleParams
 from flow.envs.centralized_env import MultiTrafficLightGridPOEnvTH
 from flow.envs.multiagent.decentralized_env import MultiTrafficLightGridPOEnvPL
-# from flow.envs.centralized_multi_agent_thesis import TrafficLightSingleMultiEnv
 from flow.networks import TrafficLightGridNetwork
 from flow.controllers import SimCarFollowingController, GridRouter
 from flow.core.traffic_light_utils import get_non_flow_params, get_flow_params
@@ -13,10 +14,13 @@ from flow.envs.presslight import PressureCentLightGridEnv, PressureDecentLightGr
 from flow.envs.thesis import ThesisCentLightGridEnv, ThesisDecentLightGridEnv
 from flow.core.benchmark_params import BenchmarkParams
 
+N_ROLLOUTS = 1  # number of rollouts per training iteration
+N_CPUS = 1  # number of parallel workers
+"""Grid example."""
 
 # # # exp 1
-arterial = 600
-side_street = 180
+# arterial = 600
+# side_street = 180
 
 # # exp 2
 arterial = 1400
@@ -174,3 +178,29 @@ flow_params = dict(
     # flow.core.params.TrafficLightParams)
     tls=tl_logic,
 )
+
+create_env, env_name = make_create_env(params=flow_params, version=0)
+
+# Register as rllib env
+register_env(env_name, create_env)
+
+test_env = create_env()
+obs_space = test_env.observation_space
+act_space = test_env.action_space
+
+
+def gen_policy():
+    """Generate a policy in RLlib."""
+    return DQNTFPolicy, obs_space, act_space, {}
+
+
+# Setup PG with a single policy graph for all agents
+POLICY_GRAPHS = {'av': gen_policy()}
+
+
+def policy_mapping_fn(_):
+    """Map a policy in RLlib."""
+    return 'av'
+
+
+POLICIES_TO_TRAIN = ['av']

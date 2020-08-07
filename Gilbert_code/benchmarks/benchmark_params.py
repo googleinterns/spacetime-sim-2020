@@ -18,6 +18,7 @@ class BenchmarkParams:
         self.save_plots = False
         self. exp_being_run = "masters demand sumo"
         self.experiment = "Presslight"
+        self.during_simulation = False
 
         # choose look-ahead distance
         # self.look_ahead = 80
@@ -27,7 +28,7 @@ class BenchmarkParams:
 
         # choose demand pattern
         # self.demand = "L"
-        self.demand = "H"
+        self.demand = "H_yebo"
 
         # choose exp running
         self.exp = "rl"

@@ -2,7 +2,6 @@
 
 from flow.core.kernel.network import BaseKernelNetwork
 from flow.core.util import makexml, printxml, ensure_dir
-from flow.core.traffic_light_utils import generate_demands # Gilbert Added
 import time
 import os
 import subprocess

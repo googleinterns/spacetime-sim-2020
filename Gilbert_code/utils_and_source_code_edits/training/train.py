@@ -217,7 +217,7 @@ def train_rllib(submodule, flags):
         "config": {
             **config
         },
-        "checkpoint_freq": 50,
+        "checkpoint_freq": 1,
         "checkpoint_at_end": True,
         "max_failures": 999,
         "stop": {

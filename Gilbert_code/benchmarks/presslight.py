@@ -18,7 +18,7 @@ class PressureDecentLightGridEnv:
         self.edge_pressure_dict = dict()
         self.waiting_times = dict()
 
-    def obs_shape_func(self):
+    def obs_shape_func(self, num_traffic_lights):
         """Define the shape of the observation space for the PressLight benchmark"""
 
         obs_shape = 14
@@ -130,7 +130,8 @@ class PressureDecentLightGridEnv:
 
         return obs
 
-    def compute_reward(self, rl_actions, **kwargs):
+    def compute_reward(self, rl_actions, step_counter, action_dict=None,
+                       rl_ids=None, **kwargs):
         """See class definition."""
         if rl_actions is None:
             return {}
@@ -146,11 +147,11 @@ class PressureDecentLightGridEnv:
 class PressureCentLightGridEnv(PressureDecentLightGridEnv):
     """TODO: cite paper"""
 
-    def obs_shape_func(self):
+    def obs_shape_func(self, num_traffic_lights):
         """Define the shape of the observation space for the PressLight benchmark"""
 
-        obs_shape = super().obs_shape_func()
-        return obs_shape * self.num_traffic_lights
+        obs_shape = super().obs_shape_func(num_traffic_lights)
+        return obs_shape * num_traffic_lights
 
     def get_state(self,
                   kernel,
@@ -171,13 +172,15 @@ class PressureCentLightGridEnv(PressureDecentLightGridEnv):
         final_obs = np.concatenate(list((obs.values())))
         return final_obs
 
-    def compute_reward(self, rl_actions, **kwargs):
+    def compute_reward(self, rl_actions, step_counter, action_dict=None,
+                       rl_ids=None, **kwargs):
         """Compute the pressure reward for this time step
         Args:
             TODO
         Returns:
             TODO
         """
+
         rew = -np.sum(list(self.edge_pressure_dict.values()))
 
         # if self.benchmark_params.log_rewards_during_iteration:

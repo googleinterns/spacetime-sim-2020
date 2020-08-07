@@ -11,6 +11,10 @@ from flow.core.traffic_light_utils import log_rewards, log_travel_times, get_tra
 from flow.envs.traffic_light_grid import TrafficLightGridPOEnv
 import pandas as pd
 import os
+from flow.envs.presslight import PressureCentLightGridEnv, PressureDecentLightGridEnv
+from flow.envs.thesis import ThesisCentLightGridEnv, ThesisDecentLightGridEnv
+from flow.core.benchmark_params import BenchmarkParams
+import itertools
 
 ADDITIONAL_ENV_PARAMS = {
     # minimum switch time for each traffic light (in seconds)
@@ -58,12 +62,31 @@ class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
         super().__init__(env_params, sim_params, network, simulator)
 
         self.rew_list = []
-        self.benchmark_params = env_params.additional_params["benchmark_params"]()
-        self.benchmark = env_params.additional_params["benchmark"](self.benchmark_params)
+
+        # if type(env_params.additional_params["benchmark_params") == str:
+        #     self.benchmark_params = env_params.additional_params["benchmark_params"]()
+        #     self.benchmark = env_params.additional_params["benchmark"](self.benchmark_params)
+        #
+        # else:
+        #     self.benchmark_params = env_params.additional_params["benchmark_params"]()
+        #     self.benchmark = env_params.additional_params["benchmark"](self.benchmark_params)
+        self.benchmark_params = BenchmarkParams()
+        self.benchmark = PressureDecentLightGridEnv(self.benchmark_params)
+        self.action_dict = dict()
 
     def compute_reward(self, rl_actions, **kwargs):
 
-        return self.benchmark.compute_reward(rl_actions, self.step_counter, **kwargs)
+        """TODO add for loop here"""
+
+        # for rl_id in rl_actions.items():
+        #     compute rew here
+        #     pass
+
+        return self.benchmark.compute_reward(rl_actions,
+                                             self.step_counter,
+                                             action_dict=self.action_dict,
+                                             rl_ids=self.k.traffic_light.get_ids(),
+                                             **kwargs)
 
     def get_state(self):
 
@@ -85,14 +108,22 @@ class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
         tl_box = Box(
             low=-np.inf,
             high=np.inf,
-            shape=(self.benchmark.obs_shape(),),
+            shape=(self.benchmark.obs_shape_func(self.num_traffic_lights),),
             dtype=np.float32)
         return tl_box
 
     @property
     def action_space(self):
         """See class definition."""
-        return Discrete(2 * self.num_traffic_lights)
+
+        # get all combinations of actions [(1,0,0), (0,1,0)...
+        lst = list(itertools.product([0, 1], repeat=self.num_traffic_lights))
+
+        # create dict mapping agents actions to list {1: (1,0,0), 2:(0,1,0) ..
+        for i in np.arange(len(lst)):
+            self.action_dict.update({i: lst[i]})
+
+        return Discrete(len(lst))
 
     def step(self, rl_actions):
         """Advance the environment by one step.
@@ -149,8 +180,24 @@ class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
 
             if n_iter < 6:
                 return
-        i = 0
-        for rl_action in rl_actions:
+
+        if self.num_traffic_lights == 1:
+            TrafficLightGridPOEnv._apply_rl_actions(self, rl_actions) # single light
+
+        else:
+            self._apply_rl_actions_centralized_multi(rl_actions)
+
+    def _apply_rl_actions_centralized_multi(self, rl_actions):
+
+        """
+        See parent class.
+
+        Issues action for each traffic light agent.
+        """
+        rl_ids = np.arange(self.num_traffic_lights)
+        actions = self.action_dict[rl_actions]
+
+        for i, rl_action in zip(rl_ids, actions):
 
             if self.discrete:
                 action = rl_action
@@ -182,5 +229,5 @@ class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
                     self.last_change[i] = 0.0
                     self.direction[i] = not self.direction[i]
                     self.currently_yellow[i] = 1
-            i += 1
+
 

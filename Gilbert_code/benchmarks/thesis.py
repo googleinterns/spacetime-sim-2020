@@ -1,5 +1,6 @@
 import numpy as np
 from flow.core.traffic_light_utils import color_vehicles, get_id_within_dist
+import itertools
 
 ID_IDX = 1
 
@@ -17,8 +18,9 @@ class ThesisDecentLightGridEnv:
         self.prev_state = dict()
         self.edge_pressure_dict = dict()
         self.waiting_times = dict()
+        self.exp_type = None
     
-    def obs_shape_func(self):
+    def obs_shape_func(self, num_traffic_lights):
         """Define the shape of the observation space for the Masters Thesis benchmark"""
 
         cars_in_scope = self.get_cars_inscope()
@@ -171,13 +173,25 @@ class ThesisDecentLightGridEnv:
 
         return obs
 
-    def compute_reward(self, rl_actions, step_counter, **kwargs):
+    def compute_reward(self,
+                       rl_actions,
+                       step_counter,
+                       action_dict=None,
+                       rl_ids=None, **kwargs):
         """See class definition."""
+
         if rl_actions is None:
             return {}
         rews = {}
-        for rl_id, rl_action in rl_actions.items():
 
+        if not action_dict:
+            rl_id_action_dict = rl_actions.items()
+
+        else:
+            actions = action_dict[rl_actions]
+            rl_id_action_dict = zip(rl_ids, actions)
+
+        for rl_id, rl_action in rl_id_action_dict:
             if step_counter == 1:
                 changed = 0
             elif step_counter > 1:
@@ -226,11 +240,11 @@ class ThesisDecentLightGridEnv:
 class ThesisCentLightGridEnv(ThesisDecentLightGridEnv):
     """TODO: cite paper"""
 
-    def obs_shape_func(self):
+    def obs_shape_func(self, num_traffic_lights):
         """Define the shape of the observation space for the Masters Thesis benchmark"""
 
-        obs_shape = super().obs_shape_func()
-        return obs_shape * self.num_traffic_lights
+        obs_shape = super().obs_shape_func(num_traffic_lights)
+        return obs_shape * num_traffic_lights
 
     def get_state(self,
                   kernel,
@@ -251,14 +265,15 @@ class ThesisCentLightGridEnv(ThesisDecentLightGridEnv):
         final_obs = np.concatenate(list((obs.values())))
         return final_obs
 
-    def compute_reward(self, rl_actions, step_counter, **kwargs):
+    def compute_reward(self, rl_actions, step_counter, action_dict=None, rl_ids=None, **kwargs):
         """Compute the pressure reward for this time step
         Args:
             TODO
         Returns:
             TODO
         """
-        rews = super().compute_reward(rl_actions, step_counter)
+        self.exp_type = "Cent"
+        rews = super().compute_reward(rl_actions, step_counter, action_dict, rl_ids)
         final_rews = sum(list((rews.values())))
         return final_rews
 

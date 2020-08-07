@@ -1,12 +1,14 @@
+# TODO: Describe briefly what is in the functions do
 from lxml import etree
 from xml.etree import ElementTree
 import random
-import matplotlib.pyplot as plt
-from flow.core.util import ensure_dir
-import os
-from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams
+from flow.core.params import InitialConfig, NetParams
 from flow.core.params import InFlows
 import numpy as np
+import pandas as pd
+import time
+import os
+import matplotlib.pyplot as plt
 
 
 def trip_info_emission_to_csv(emission_path, output_path=None):
@@ -274,3 +276,264 @@ def get_non_flow_params(enter_speed, add_net_params):
     net = NetParams(additional_params=add_net_params)
 
     return initial, net
+
+
+def log_travel_times(rl_actions,
+                     iter_,
+                     obj,
+                     network,
+                     sim_params,
+                     step_counter
+                     ):
+    """log average travel time to tensorboard
+
+    Parameters
+    ----------
+     rl_actions : array_like
+     FIXME
+
+        a list of actions provided by the rl algorithm
+     iter_: int
+        value of training iteration currently being simulated
+
+    """
+
+    save_plots = obj.save_plots,
+    exp_being_run = obj.exp_being_run,
+    writer = obj.writer
+    exp_name = obj.exp_name
+
+    # wait a short period of time to ensure the xml file is readable
+    time.sleep(0.1)
+
+    # collect the location of the emission file
+    dir_path = sim_params.emission_path
+    emission_filename = \
+        "{0}-emission.xml".format(network.name)
+    emission_path = os.path.join(dir_path, emission_filename)
+
+    # convert the emission file into a csv adn return trip info in dict
+    trip_info = trip_info_emission_to_csv(emission_path)
+
+    # log travel times to tensorbord
+    info = pd.DataFrame(trip_info)
+
+    # Delete the .xml version of the emission file.
+    os.remove(emission_path)
+
+    if rl_actions is None:
+        n_iter = step_counter
+        string = "untrained"
+    else:
+        n_iter = iter_
+        string = "trained"
+
+    # get average of full trip durations
+    avg = info.travel_times.mean()
+    print("avg_travel_time = " + str(avg))
+    print("arrived cars = {}".format(len(info.travel_times)))
+    print("last car at = {}".format(max(info.arrival)))
+    if save_plots:
+        plt.hist(info.travel_times, bins=150)
+        plt.xlabel("Travel Times (sec)")
+        plt.ylabel("Number of vehicles/frequency")
+        plt.title("1x3 {} Travel Time Distribution\n "
+                  "{} Avg Travel Time \n"
+                  " {} arrived cars,  last car at {}".format(exp_being_run,
+                                                             int(avg),
+                                                             len(info.travel_times),
+                                                             max(info.arrival)))
+        plt.savefig("{}.png".format(exp_being_run))
+        # plt.show()
+    writer.add_scalar(exp_name + '/travel_times ' + string, avg, n_iter)
+    writer.add_scalar(exp_name + '/arrived cars ' + string, len(info.travel_times), n_iter)
+
+
+def log_rewards(rew,
+                action,
+                obj,
+                n_iter,
+                step_counter):
+
+    """log current reward during simulation or average reward after simulation to tensorboard
+
+    Parameters
+    ----------
+     rew : array_like or int
+        single value of current time-step's reward if int
+        array or rewards for each time-step for entire simulation
+     action : array_like
+        a list of actions provided by the rl algorithm
+     during_simulation : bool
+        an list of actions provided by the rl algorithm
+     n_iter: int
+        value of training iteration currently being simulated
+
+    """
+    writer = obj.writer
+    exp_name = obj.exp_name
+    during_simulation = obj.during_simulation
+    if action is None:
+        string = "untrained"
+    else:
+        string = "trained"
+
+    if during_simulation:
+        writer.add_scalar(
+            exp_name + '/reward_per_simulation_step ' + string,
+            rew,
+            step_counter
+        )
+    else:
+        avg = np.mean(np.array(rew))
+        print("avg_reward = " + str(avg))
+        writer.add_scalar(
+            exp_name + '/average_reward ' + string,
+            avg,
+            n_iter
+        )
+
+
+def get_training_iter(full_path):
+    """Create csv file to track train iterations
+    iteration steps and update the values
+
+    Returns
+    ----------
+    n_iter: int
+        value of training iteration currently being simulated
+
+    """
+
+    # check if file exists in directory
+    if not os.path.isfile(full_path):
+        # create dataframe with training_iteration = 0
+        data = {"training_iteration": 0}
+        file_to_convert = pd.DataFrame([data])
+
+        # convert to csv
+        file_to_convert.to_csv(full_path, index=False)
+        return 0
+
+    else:
+        # read csv
+        df = pd.read_csv(full_path, index_col=False)
+        n_iter = df.training_iteration.iat[-1]
+
+        # increase iteration by 1
+        data = {"training_iteration": n_iter + 1}
+        file_to_convert = df.append(data, ignore_index=True)
+
+        # convert to csv
+        file_to_convert.to_csv(full_path, index=False)
+
+        return n_iter+1
+    
+    
+def color_vehicles(ids, color, kernel):
+    """Color observed vehicles to visualize during simulation
+
+    Parameters
+    ----------
+    ids: list
+        list of string ids of vehicles to color
+    color: tuple
+        tuple of RGB color pattern to color vehicles
+
+    """
+    for veh_id in ids:
+        kernel.vehicle.set_color(veh_id=veh_id, color=color)
+
+
+def get_id_within_dist(edge, direction, kernel, obj):
+    """Collect vehicle ids within looking ahead or behind distance
+
+    Parameters
+    ----------
+    edge: string
+        the name of the edge to observe
+
+    direction: string
+        the direction of the edge relative to the traffic lights.
+        Can be either "ahead" or "behind
+
+    Returns
+    ----------
+    list
+        list of observed string ids of vehicles either
+        ahead or behind traffic light
+
+    """
+    if direction == "ahead":
+        filter_func = is_within_look_ahead(kernel, obj.look_ahead)
+        ids_in_scope = filter(filter_func, kernel.vehicle.get_ids_by_edge(edge))
+        return list(ids_in_scope)
+
+    if direction == "behind":
+        filter_func = is_within_look_behind(kernel, obj.look_ahead)
+        ids_in_scope = filter(filter_func, kernel.vehicle.get_ids_by_edge(edge))
+        return list(ids_in_scope)
+
+
+def is_within_look_ahead(kernel, look_ahead):
+    """Check if vehicle is within the looking distance
+
+    Parameters
+    ----------
+    veh_id: string
+        string id of vehicle in pre-defined lane
+
+    Returns
+    ----------
+    bool
+        True or False
+    """
+    def deep_filter(veh_id):
+        if find_intersection_dist(veh_id, kernel) <= look_ahead:
+            return True
+        else:
+            return False
+
+    return deep_filter
+
+
+def is_within_look_behind(kernel, look_ahead):
+    """Check if vehicle is within the looking distance
+
+    Parameters
+    ----------
+    veh_id: string
+        string id of vehicle in pre-defined lane
+
+    Returns
+    ----------
+    bool
+        True or False
+    """
+
+    def deep_filter(veh_id):
+        if kernel.vehicle.get_position(veh_id) <= look_ahead:
+            return True
+        else:
+            return False
+
+    return deep_filter
+
+
+def find_intersection_dist(veh_id, kernel):
+    """Return distance from intersection.
+
+    Return the distance from the vehicle's current position to the position
+    of the node it is heading toward.
+    """
+    edge_id = kernel.vehicle.get_edge(veh_id)
+    # FIXME this might not be the best way of handling this
+    if edge_id == "":
+        return -10
+    if 'center' in edge_id:
+        return 0
+    edge_len = kernel.network.edge_length(edge_id)
+    relative_pos = kernel.vehicle.get_position(veh_id)
+    dist = edge_len - relative_pos
+    return dist
+

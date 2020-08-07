@@ -1,11 +1,9 @@
-"""Grid example."""
-from flow.controllers import GridRouter
-from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams
+"""Multi-agent traffic light example (single shared policy)."""
+from flow.core.params import SumoParams, EnvParams
 from flow.core.params import TrafficLightParams
-from flow.core.params import InFlows, SumoCarFollowingParams, VehicleParams
+from flow.core.params import SumoCarFollowingParams, VehicleParams
 from flow.envs.centralized_env import MultiTrafficLightGridPOEnvTH
 from flow.envs.multiagent.decentralized_env import MultiTrafficLightGridPOEnvPL
-# from flow.envs.centralized_multi_agent_thesis import TrafficLightSingleMultiEnv
 from flow.networks import TrafficLightGridNetwork
 from flow.controllers import SimCarFollowingController, GridRouter
 from flow.core.traffic_light_utils import get_non_flow_params, get_flow_params
@@ -13,10 +11,13 @@ from flow.envs.presslight import PressureCentLightGridEnv, PressureDecentLightGr
 from flow.envs.thesis import ThesisCentLightGridEnv, ThesisDecentLightGridEnv
 from flow.core.benchmark_params import BenchmarkParams
 
+N_ROLLOUTS = 1  # number of rollouts per training iteration
+N_CPUS = 1  # number of parallel workers
+"""Grid example."""
 
 # # # exp 1
-arterial = 600
-side_street = 180
+# arterial = 600
+# side_street = 180
 
 # # exp 2
 arterial = 1400
