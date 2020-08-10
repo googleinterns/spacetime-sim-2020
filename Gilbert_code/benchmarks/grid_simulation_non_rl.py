@@ -152,8 +152,8 @@ flow_params = dict(
             "tl_type": "actuated",
             "num_local_edges": 4,
             "num_local_lights": 4,
-            # "benchmark": press_[1],
-            # "benchmark_params": BenchmarkParams
+            "benchmark": "ThesisDecentLightGridEnv",
+            "benchmark_params": "BenchmarkParams"
         }
         # additional_params=ADDITIONAL_ENV_PARAMS,
     ),

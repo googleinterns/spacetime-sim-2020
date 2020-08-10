@@ -40,7 +40,7 @@ inner_length = 240
 long_length = 240
 short_length = 240
 n_rows = 1
-n_columns = 1
+n_columns = 3
 num_cars_left = 0 #up
 num_cars_right = 0 #bottom
 num_cars_top = 0 #right
@@ -126,10 +126,10 @@ thesis_ = ThesisCentLightGridEnv, ThesisDecentLightGridEnv
 
 flow_params = dict(
     # name of the experiment
-    exp_tag='grid-trail',
+    exp_tag='TESTING',
 
     # name of the flow environment the experiment is running on
-    env_name=env_name_[0],
+    env_name=MultiTrafficLightGridPOEnvPL,
 
     # name of the network class the experiment is running on
     network=TrafficLightGridNetwork,
@@ -156,8 +156,8 @@ flow_params = dict(
             "tl_type": "actuated",
             "num_local_edges": 4,
             "num_local_lights": 4,
-            # "benchmark": press_[1],
-            # "benchmark_params": BenchmarkParams
+            "benchmark": "ThesisDecentLightGridEnv",  #explain why this should be a string
+            "benchmark_params": "BenchmarkParams"
         }
         # additional_params=ADDITIONAL_ENV_PARAMS,
     ),
