@@ -177,41 +177,29 @@ class ThesisDecentLightGridEnv:
                        rl_actions,
                        step_counter,
                        action_dict=None,
-                       rl_ids=None, **kwargs):
+                       rl_id=None, **kwargs):
         """See class definition."""
 
-        if rl_actions is None:
-            return {}
-        rews = {}
-
-        if not action_dict:
-            rl_id_action_dict = rl_actions.items()
-
-        else:
-            actions = action_dict[rl_actions]
-            rl_id_action_dict = zip(rl_ids, actions)
-
-        for rl_id, rl_action in rl_id_action_dict:
-            if step_counter == 1:
+        if step_counter == 1:
+            changed = 0
+        elif step_counter > 1:
+            if self.prev_state[rl_id] == self.current_state[rl_id]:
                 changed = 0
-            elif step_counter > 1:
-                if self.prev_state[rl_id] == self.current_state[rl_id]:
-                    changed = 0
-                else:
-                    changed = 1
-
-            if step_counter == 1:
-                self.num_of_switch_actions[rl_id] = [changed]
-            elif step_counter < 121:
-                self.num_of_switch_actions[rl_id] += [changed]
             else:
-                self.num_of_switch_actions[rl_id] = self.num_of_switch_actions[rl_id][1:] + [changed]
+                changed = 1
 
-            rews[rl_id] = - (0.1 * sum(self.num_of_switch_actions[rl_id]) +
-                                 0.2 * self.num_of_emergency_stops[rl_id] +
-                                 0.3 * self.delays[rl_id] +
-                                 0.3 * self.waiting_times[rl_id]/60
-                                 )
+        if step_counter == 1:
+            self.num_of_switch_actions[rl_id] = [changed]
+        elif step_counter < 121:
+            self.num_of_switch_actions[rl_id] += [changed]
+        else:
+            self.num_of_switch_actions[rl_id] = self.num_of_switch_actions[rl_id][1:] + [changed]
+
+        rews = - (0.1 * sum(self.num_of_switch_actions[rl_id]) +
+                             0.2 * self.num_of_emergency_stops[rl_id] +
+                             0.3 * self.delays[rl_id] +
+                             0.3 * self.waiting_times[rl_id]/60
+                             )
 
         return rews
 
@@ -264,16 +252,3 @@ class ThesisCentLightGridEnv(ThesisDecentLightGridEnv):
 
         final_obs = np.concatenate(list((obs.values())))
         return final_obs
-
-    def compute_reward(self, rl_actions, step_counter, action_dict=None, rl_ids=None, **kwargs):
-        """Compute the pressure reward for this time step
-        Args:
-            TODO
-        Returns:
-            TODO
-        """
-        self.exp_type = "Cent"
-        rews = super().compute_reward(rl_actions, step_counter, action_dict, rl_ids)
-        final_rews = sum(list((rews.values())))
-        return final_rews
-

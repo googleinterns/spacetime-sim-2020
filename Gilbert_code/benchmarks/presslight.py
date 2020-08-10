@@ -131,17 +131,10 @@ class PressureDecentLightGridEnv:
         return obs
 
     def compute_reward(self, rl_actions, step_counter, action_dict=None,
-                       rl_ids=None, **kwargs):
+                       rl_id=None, **kwargs):
         """See class definition."""
-        if rl_actions is None:
-            return {}
-        rews = {}
-        for rl_id in rl_actions.keys():
 
-            # get edge pressures
-            rews[rl_id] = -sum(self.edge_pressure_dict[rl_id])
-
-        return rews
+        return -sum(self.edge_pressure_dict[rl_id])
 
 
 class PressureCentLightGridEnv(PressureDecentLightGridEnv):
@@ -171,20 +164,3 @@ class PressureCentLightGridEnv(PressureDecentLightGridEnv):
 
         final_obs = np.concatenate(list((obs.values())))
         return final_obs
-
-    def compute_reward(self, rl_actions, step_counter, action_dict=None,
-                       rl_ids=None, **kwargs):
-        """Compute the pressure reward for this time step
-        Args:
-            TODO
-        Returns:
-            TODO
-        """
-
-        rew = -np.sum(list(self.edge_pressure_dict.values()))
-
-        # if self.benchmark_params.log_rewards_during_iteration:
-        #     # write current reward to tensorboard (during simulation)
-        #     self.log_rewards(rew, rl_actions, during_simulation=True)
-
-        return rew

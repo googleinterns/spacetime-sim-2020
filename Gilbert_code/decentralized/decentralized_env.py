@@ -6,6 +6,7 @@ through an n x m traffic light grid.
 from flow.envs.multiagent.traffic_light_grid import MultiTrafficLightGridPOEnv
 from flow.envs.centralized_env import MultiTrafficLightGridPOEnvTH
 from gym.spaces.discrete import Discrete
+from flow.core.traffic_light_utils import log_rewards, log_travel_times, get_training_iter
 
 ID_IDX = 1
 
@@ -61,11 +62,11 @@ class MultiTrafficLightGridPOEnvPL(MultiTrafficLightGridPOEnvTH, MultiTrafficLig
         self.rew_list += list(reward.values())
         if done["__all__"]:
             # current training iteration
-            iter_ = self.get_training_iter()
+            iter_ = get_training_iter(self.benchmark_params.full_path)
             # log average travel time
-            self.log_travel_times(rl_actions, iter_)
+            log_travel_times(rl_actions, iter_, self.benchmark_params, self.network, self.sim_params, self.step_counter)
             # log average reward
-            self.log_rewards(self.rew_list, rl_actions, during_simulation=False, n_iter=iter_)
+            log_rewards(self.rew_list, rl_actions, self.benchmark_params, iter_, self.step_counter)
 
         return next_observation, reward, done, infos
 
@@ -76,6 +77,29 @@ class MultiTrafficLightGridPOEnvPL(MultiTrafficLightGridPOEnvTH, MultiTrafficLig
     def clip_actions(self, rl_actions=None):
 
         return MultiTrafficLightGridPOEnv.clip_actions(self, rl_actions)
+
+    def compute_reward(self, rl_actions, **kwargs):
+
+        """TODO add for loop here"""
+        if rl_actions is None:
+            return {}
+        rews = {}
+
+        rl_ids = self.k.traffic_light.get_ids()
+        if not self.action_dict:
+            rl_id_action_dict = rl_actions.items()
+
+        else:
+            actions = self.action_dict[rl_actions]
+            rl_id_action_dict = zip(rl_ids, actions)
+
+        for rl_id, rl_action in rl_id_action_dict:
+            rews[rl_id] = self.benchmark.compute_reward(rl_action,
+                                          self.step_counter,
+                                          action_dict=self.action_dict,
+                                          rl_id=rl_id,
+                                          **kwargs)
+        return rews
 
     def _apply_rl_actions(self, rl_actions):
         """

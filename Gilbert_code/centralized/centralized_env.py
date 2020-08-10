@@ -11,10 +11,15 @@ from flow.core.traffic_light_utils import log_rewards, log_travel_times, get_tra
 from flow.envs.traffic_light_grid import TrafficLightGridPOEnv
 import pandas as pd
 import os
+from flow.envs import thesis
+from flow.envs import presslight
+from flow.core import benchmark_params
 from flow.envs.presslight import PressureCentLightGridEnv, PressureDecentLightGridEnv
 from flow.envs.thesis import ThesisCentLightGridEnv, ThesisDecentLightGridEnv
 from flow.core.benchmark_params import BenchmarkParams
 import itertools
+
+modules = [thesis, presslight]
 
 ADDITIONAL_ENV_PARAMS = {
     # minimum switch time for each traffic light (in seconds)
@@ -63,30 +68,41 @@ class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
 
         self.rew_list = []
 
-        # if type(env_params.additional_params["benchmark_params") == str:
-        #     self.benchmark_params = env_params.additional_params["benchmark_params"]()
-        #     self.benchmark = env_params.additional_params["benchmark"](self.benchmark_params)
-        #
-        # else:
-        #     self.benchmark_params = env_params.additional_params["benchmark_params"]()
-        #     self.benchmark = env_params.additional_params["benchmark"](self.benchmark_params)
-        self.benchmark_params = BenchmarkParams()
-        self.benchmark = PressureDecentLightGridEnv(self.benchmark_params)
+        # TODO: remove hardcode
+        self.benchmark_params = getattr(benchmark_params, env_params.additional_params["benchmark_params"])()
+        for mod in modules:
+            try:
+                self.benchmark = getattr(mod, env_params.additional_params["benchmark"])(self.benchmark_params)
+                break
+            except:
+                continue
+
         self.action_dict = dict()
 
     def compute_reward(self, rl_actions, **kwargs):
 
         """TODO add for loop here"""
+        if rl_actions is None:
+            return {}
+        rews = {}
 
-        # for rl_id in rl_actions.items():
-        #     compute rew here
-        #     pass
+        rl_ids = self.k.traffic_light.get_ids()
+        if not self.action_dict:
+            rl_id_action_dict = rl_actions.items()
 
-        return self.benchmark.compute_reward(rl_actions,
-                                             self.step_counter,
-                                             action_dict=self.action_dict,
-                                             rl_ids=self.k.traffic_light.get_ids(),
-                                             **kwargs)
+        else:
+            actions = self.action_dict[rl_actions]
+            rl_id_action_dict = zip(rl_ids, actions)
+
+        for rl_id, rl_action in rl_id_action_dict:
+            rews[rl_id] = self.benchmark.compute_reward(rl_actions,
+                                          self.step_counter,
+                                          action_dict=self.action_dict,
+                                          rl_id=rl_id,
+                                          **kwargs)
+
+        final_rew = sum(list(rews.values()))
+        return final_rew
 
     def get_state(self):
 
@@ -169,6 +185,7 @@ class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
 
         Issues action for each traffic light agent.
         """
+        # TODO(Gilbert): Use flag to control it
         if self.benchmark_params.sumo_actuated_baseline:
             # return
             if not os.path.isfile(self.benchmark_params.full_path):
