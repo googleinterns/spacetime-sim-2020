@@ -51,14 +51,13 @@ class PressureDecentLightGridEnv:
 
         # collect list of names of inner edges
         internal_edges = get_internal_edges(kernel)
-        node_to_edges = network.node_mapping
 
         for rl_id in kernel.traffic_light.get_ids():
             # collect observations for each traffic light
 
             # collect and set edge names and ids
-            incoming_edges, local_edge_numbers, local_id_nums = get_traffic_params(rl_id,
-                                                                                node_to_edges,
+            incoming_edges, local_edge_numbers, local_id_nums = get_edge_params(rl_id,
+                                                                                network,
                                                                                 kernel,
                                                                                 _get_relative_node)
 
@@ -209,10 +208,10 @@ def get_observed_ids(kernel, edge_, outgoing_edge, benchmark_params):
     return observed_ids_ahead, observed_ids_behind
 
 
-def get_traffic_params(rl_id, node_to_edges, kernel, _get_relative_node):
+def get_edge_params(rl_id, network, kernel, _get_relative_node):
 
     """Collect ids and names of edges"""
-
+    node_to_edges = network.node_mapping
     rl_id_num = int(rl_id.split("center")[ID_IDX])
     local_edges = node_to_edges[rl_id_num][1]
     local_edge_numbers = [kernel.network.get_edge_list().index(e)
