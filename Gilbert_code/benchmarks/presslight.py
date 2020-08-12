@@ -7,6 +7,7 @@ ID_IDX = 1
 class PressureDecentLightGridEnv:
 
     def __init__(self, params_obj):
+        """Initialize the class with given BenchmarkParams object"""
 
         self.benchmark_params = params_obj
         self.look_ahead = self.benchmark_params.look_ahead
@@ -130,7 +131,7 @@ class PressureCentLightGridEnv(PressureDecentLightGridEnv):
 
 
 def get_internal_edges(kernel):
-    """Collect all internal edges in network
+    """Collect all internal edges in network including last outgoing edge of specified route
     ie. Inner edges are Internal edges
                   (outer)         (outer)       (outer)
                      |              |              |
@@ -182,7 +183,7 @@ def get_light_states(kernel, rl_id):
 
     if light_states == "GrGr":
         light_states__ = [1]
-    elif light_states == ["yryr"]:
+    elif light_states == "yryr":
         light_states__ = [0.6]
     else:
         light_states__ = [0.2]
