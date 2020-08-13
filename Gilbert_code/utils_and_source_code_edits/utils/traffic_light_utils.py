@@ -5,9 +5,9 @@ import random
 from flow.core.params import InitialConfig, NetParams
 from flow.core.params import InFlows
 import numpy as np
-import pandas as pd
 import time
 import os
+import pandas as pd
 import matplotlib.pyplot as plt
 
 
@@ -333,18 +333,19 @@ def log_travel_times(rl_actions,
     print("avg_travel_time = " + str(avg))
     print("arrived cars = {}".format(len(info.travel_times)))
     print("last car at = {}".format(max(info.arrival)))
-    if save_plots:
-        plt.hist(info.travel_times, bins=150)
-        plt.xlabel("Travel Times (sec)")
-        plt.ylabel("Number of vehicles/frequency")
-        plt.title("1x3 {} Travel Time Distribution\n "
-                  "{} Avg Travel Time \n"
-                  " {} arrived cars,  last car at {}".format(exp_being_run,
-                                                             int(avg),
-                                                             len(info.travel_times),
-                                                             max(info.arrival)))
-        plt.savefig("{}.png".format(exp_being_run))
-        # plt.show()
+    # if save_plots:
+    #     plt.hist(info.travel_times, bins=150)
+    #     plt.xlabel("Travel Times (sec)")
+    #     plt.ylabel("Number of vehicles/frequency")
+    #     plt.title("1x3 {} Travel Time Distribution\n "
+    #               "{} Avg Travel Time \n"
+    #               " {} arrived cars,  last car at {}".format(exp_being_run,
+    #                                                          int(avg),
+    #                                                          len(info.travel_times),
+    #                                                          max(info.arrival)))
+    #
+    #     plt.savefig("{}.png".format(exp_being_run))
+    #     plt.show()
     writer.add_scalar(exp_name + '/travel_times ' + string, avg, n_iter)
     writer.add_scalar(exp_name + '/arrived cars ' + string, len(info.travel_times), n_iter)
 
@@ -364,15 +365,17 @@ def log_rewards(rew,
         array or rewards for each time-step for entire simulation
      action : array_like
         a list of actions provided by the rl algorithm
-     during_simulation : bool
-        an list of actions provided by the rl algorithm
+     obj : bool
+        object containing tensorboard parameters
      n_iter: int
         value of training iteration currently being simulated
+    step_counter: int
+        current simulation time step
 
     """
     writer = obj.writer
     exp_name = obj.exp_name
-    during_simulation = obj.during_simulation
+    during_simulation = obj.log_rewards_during_iteration
     if action is None:
         string = "untrained"
     else:
@@ -537,3 +540,103 @@ def find_intersection_dist(veh_id, kernel):
     dist = edge_len - relative_pos
     return dist
 
+
+def get_light_states(kernel, rl_id):
+    """Return current traffic light stats as number:
+    ie either GrGrGr, yryryr, ryryry, rGrGrG"""
+
+    light_states = kernel.traffic_light.get_state(rl_id)
+
+    if light_states == "GrGr":
+        light_states__ = [1]
+    elif light_states == "yryr":
+        light_states__ = [0.6]
+    else:
+        light_states__ = [0.2]
+
+    return light_states__
+
+
+def get_observed_ids(kernel, edge_, outgoing_edge, benchmark_params):
+    """Return lists of observed vehicles within look ahead and behind distances"""
+
+    # get vehicle ids in incoming edge
+    observed_ids_ahead = \
+        get_id_within_dist(edge_, "ahead", kernel, benchmark_params)
+
+    # get ids in outgoing edge
+    observed_ids_behind = \
+        get_id_within_dist(outgoing_edge, "behind", kernel, benchmark_params)
+
+    # color incoming and outgoing vehicles
+    color_vehicles(observed_ids_ahead, benchmark_params.CYAN, kernel)
+    color_vehicles(observed_ids_behind, benchmark_params.RED, kernel)
+
+    return observed_ids_ahead, observed_ids_behind
+
+
+def get_edge_params(rl_id, network, kernel, _get_relative_node):
+
+    """Collect ids and names of edges"""
+    node_to_edges = network.node_mapping
+    rl_id_num = int(rl_id.split("center")[ID_IDX])
+    local_edges = node_to_edges[rl_id_num][1]
+    local_edge_numbers = [kernel.network.get_edge_list().index(e)
+                          for e in local_edges]
+    local_id_nums = [rl_id_num, _get_relative_node(rl_id, "top"),
+                     _get_relative_node(rl_id, "bottom"),
+                     _get_relative_node(rl_id, "left"),
+                     _get_relative_node(rl_id, "right")]
+
+    return local_edges, local_edge_numbers, local_id_nums
+
+
+def get_internal_edges(kernel):
+    """Collect all internal edges in network including last outgoing edge of specified route
+    ie. Inner edges are Internal edges
+                  (outer)         (outer)       (outer)
+                     |              |              |
+        (outer) x----|----Inner-----|----Inner-----|----x (outer)
+                   Inner          Inner          Inner
+        (outer) x----|----Inner-----|----Inner-----|----x (outer)
+                     |              |              |
+                 (outer)         (outer)       (outer)
+
+
+    """
+    internal_edges = []
+    for i in kernel.network.rts:
+        if kernel.network.rts[i]:
+            if kernel.network.rts[i][0][0][1:-1]:
+                internal_edges += [kernel.network.rts[i][0][0][1:]]
+    return internal_edges
+
+
+def get_outgoing_edge(kernel, edge_, internal_edges):
+    """Collect the next edge for vehicles given the incoming edge id""
+    ie.
+                    incoming
+                        |
+        -> --incoming---|---outgoing--->
+                        |
+                     outgoing
+    Parameters:
+    ---------
+
+    Returns:
+    ---------
+
+    """
+    if kernel.network.rts[edge_]:
+        # if edge is an outer(global) incoming edge,
+        # outgoing edge is the next edge in the route
+        index_ = kernel.network.rts[edge_][0][0].index(edge_)
+        outgoing_edge = kernel.network.rts[edge_][0][0][index_ + 1]
+    else:
+        for lst in internal_edges:
+            # if edge is an inner edges, outgoing is the next edge in the list
+            if len(lst) > 1 and edge_ in lst:
+                index_ = lst.index(edge_)
+                outgoing_edge = lst[index_ + 1]
+
+    return outgoing_edge
