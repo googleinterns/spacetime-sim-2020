@@ -1,13 +1,27 @@
+""" Deep Reinforcement Learning for Coordination in Traffic Light Control benchmark
+    implementation from thesis paper:
+    https://esc.fnwi.uva.nl/thesis/centraal/files/f632158773.pdf
+
+    The methods in this file define the rewards functions, observations,
+    and observation space of the defined benchmark
+"""
 import numpy as np
 from flow.core.traffic_light_utils import get_light_states, \
     get_observed_ids, get_edge_params, get_internal_edges, get_outgoing_edge
 
-ID_IDX = 1
-
 
 class ThesisLightGridEnv:
+    """ van der Pol, Elise. (2016).
+        Deep Reinforcement Learning for Coordination in Traffic Light Control (MSc thesis).
+
+       An implementation of the thesis benchmark.
+       This benchmark utilizes vehicle properties (such as positions, speeds, accelerations)
+        and traffic light states as observation, and simulation features such as waiting times, switch frequency etc.
+        as the reward function:
+    """
 
     def __init__(self, params_obj):
+        """Initialize the class with given BenchmarkParams object"""
 
         self.benchmark_params = params_obj
         self.look_ahead = self.benchmark_params.look_ahead
@@ -21,7 +35,14 @@ class ThesisLightGridEnv:
         self.exp_type = None
     
     def obs_shape_func(self):
-        """Define the shape of the observation space for the Masters Thesis benchmark"""
+        """Define the shape of the observation space for the Masters Thesis benchmark
+
+        Returns:
+        ------
+        obs_shape: int
+            Value of shape the observation space. Each value in the observation
+            space is described in the get_state method
+        """
 
         cars_in_scope = self.get_cars_inscope()
         obs_shape = (cars_in_scope * 3 + 10)
@@ -36,16 +57,46 @@ class ThesisLightGridEnv:
                   currently_yellow,
                   step_counter,
                   rl_id):
-        """Observations for each traffic light agent.
+        """ Collect the observations for a single traffic light.
 
-        :return: dictionary which contains agent-wise observations as follows:
-        - For the self.num_observed number of vehicles closest and incoming
-        towards traffic light agent, gives the vehicle velocity, distance to
-        intersection, edge number.
-        - For edges in the network, gives the density and average velocity.
-        - For the self.num_local_lights number of nearest lights (itself
-        included), gives the traffic light information, including the last
-        change time, light direction (i.e. phase), and a currently_yellow flag.
+        Parameters:
+        ---------
+        kernel: obj
+            Traci API obj to collect current simulation information
+            (from flow.kernel in parent class)
+                example: kernel.vehicle.get_accel(veh_id)
+                        returns the acceleration of the vehicle id
+        network: obj
+            (from flow.network)
+            object to collect network information
+            example: kernel.network.rts
+                    returns a dict containing list of strings or
+                    all the route edge names
+
+        direction : np array [num_traffic_lights]x1 np array
+            Multi-dimensional array keeping track of which direction in traffic
+            light is flowing. 0 indicates flow from top to bottom, and
+            1 indicates flow from left to right
+
+        step_counter: int
+            current simulation time step
+
+        rl_id: string
+            Name of current traffic light node/intersection being observed
+
+        Returns:
+        ---------
+        observation: np array
+             observations of current traffic light described by the rl_id:
+             ie.  np.concatenate([
+                                  vehicle positions of each observed vehicle,
+                                  relative speeds of each observed vehicle compared to max allowable speed,
+                                  accelerations of each observed vehicle,
+                                  local edge ids at the intersection,
+                                  direction that is flowing for specific rl_id,
+                                  traffic light states values
+                                ])
+
         """
 
         # Traffic light information
@@ -138,8 +189,32 @@ class ThesisLightGridEnv:
                        step_counter,
                        action_dict=None,
                        rl_id=None, **kwargs):
-        """See class definition."""
+        """Compute the reward for single traffic light as described in class definition.
 
+           Note: Because we are minimizing the collected metrics described below,
+           we take the negate it in order to maximize reward
+
+        Parameters:
+        -----------
+        step_counter: int
+            current simulation time step
+
+        rl_id: string
+            Name of current traffic light node/intersection being observed
+
+        Returns:
+        ---------
+        rew : int
+            negative of the following weighted metrics:
+                [number of switch action in the past 120 seconds,
+                number of emergency stops on that intersection for the observed vehicles,
+                sum of delays for each observed vehicle,
+                sum of waiting times for each observed vehicle]
+
+            """
+
+        # track the time steps in order to know when 120 seconds
+        # has been reached in order to stop updating memory pool for switching actions
         if step_counter == 1:
             changed = 0
         elif step_counter > 1:
@@ -148,6 +223,7 @@ class ThesisLightGridEnv:
             else:
                 changed = 1
 
+        # update the list of action switches
         if step_counter == 1:
             self.num_of_switch_actions[rl_id] = [changed]
         elif step_counter < 121:
