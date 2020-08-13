@@ -5,8 +5,12 @@ through an n x m traffic light grid.
 """
 from flow.envs.multiagent.traffic_light_grid import MultiTrafficLightGridPOEnv
 from flow.envs.centralized_env import MultiTrafficLightGridPOEnvTH
+from gym.spaces.box import Box
 from gym.spaces.discrete import Discrete
 from flow.core.traffic_light_utils import log_rewards, log_travel_times, get_training_iter
+import pandas as pd
+import os
+import numpy as np
 
 ID_IDX = 1
 
@@ -70,6 +74,21 @@ class MultiTrafficLightGridPOEnvPL(MultiTrafficLightGridPOEnvTH, MultiTrafficLig
 
         return next_observation, reward, done, infos
 
+    def get_state(self):
+
+        obs = {}
+
+        for rl_id in self.k.traffic_light.get_ids():
+            obs[rl_id] = self.benchmark.get_state(kernel=self.k,
+                                            network=self.network,
+                                            _get_relative_node=self._get_relative_node,
+                                            direction=self.direction,
+                                            currently_yellow=self.currently_yellow,
+                                            step_counter=self.step_counter,
+                                            rl_id=rl_id)
+
+        return obs
+
     def reset(self, new_inflow_rate=None):
 
         return MultiTrafficLightGridPOEnv.reset(self, new_inflow_rate)
@@ -107,6 +126,18 @@ class MultiTrafficLightGridPOEnvPL(MultiTrafficLightGridPOEnvTH, MultiTrafficLig
 
         Issues action for each traffic light agent.
         """
+        if self.benchmark_params.sumo_actuated_baseline:
+            # return
+            if not os.path.isfile(self.benchmark_params.full_path):
+                return
+            else:
+                # read csv
+                df = pd.read_csv(self.benchmark_params.full_path, index_col=False)
+                n_iter = df.training_iteration.iat[-1]
+
+            if n_iter < self.benchmark_params.sumo_actuated_simulations:
+                return
+
         for rl_id, rl_action in rl_actions.items():
             i = int(rl_id.split("center")[ID_IDX])
             if self.discrete:
@@ -140,6 +171,20 @@ class MultiTrafficLightGridPOEnvPL(MultiTrafficLightGridPOEnvTH, MultiTrafficLig
                     self.direction[i] = not self.direction[i]
                     self.currently_yellow[i] = 1
 
+    @property
+    def observation_space(self):
+        """State space that is partially observed.
+
+        Velocities, distance to intersections, edge number (for nearby
+        vehicles) from each direction, local edge information, and traffic
+        light state.
+        """
+        tl_box = Box(
+            low=-np.inf,
+            high=np.inf,
+            shape=(self.benchmark.obs_shape_func(),),
+            dtype=np.float32)
+        return tl_box
     @property
     def action_space(self):
         """See class definition."""

@@ -14,10 +14,8 @@ import os
 from flow.envs import thesis
 from flow.envs import presslight
 from flow.core import benchmark_params
-from flow.envs.presslight import PressureCentLightGridEnv, PressureDecentLightGridEnv
-from flow.envs.thesis import ThesisCentLightGridEnv, ThesisDecentLightGridEnv
-from flow.core.benchmark_params import BenchmarkParams
 import itertools
+
 
 modules = [thesis, presslight]
 
@@ -106,12 +104,19 @@ class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
 
     def get_state(self):
 
-        return self.benchmark.get_state(kernel=self.k,
-                                        network=self.network,
-                                        _get_relative_node=self._get_relative_node,
-                                        direction=self.direction,
-                                        currently_yellow=self.currently_yellow,
-                                        step_counter=self.step_counter)
+        obs = {}
+
+        for rl_id in self.k.traffic_light.get_ids():
+            obs[rl_id] = self.benchmark.get_state(kernel=self.k,
+                                            network=self.network,
+                                            _get_relative_node=self._get_relative_node,
+                                            direction=self.direction,
+                                            currently_yellow=self.currently_yellow,
+                                            step_counter=self.step_counter,
+                                            rl_id=rl_id)
+
+        final_obs = np.concatenate(list((obs.values())))
+        return final_obs
 
     @property
     def observation_space(self):
@@ -124,7 +129,7 @@ class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
         tl_box = Box(
             low=-np.inf,
             high=np.inf,
-            shape=(self.benchmark.obs_shape_func(self.num_traffic_lights),),
+            shape=(self.benchmark.obs_shape_func() * self.num_traffic_lights,),
             dtype=np.float32)
         return tl_box
 
@@ -195,7 +200,7 @@ class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
                 df = pd.read_csv(self.benchmark_params.full_path, index_col=False)
                 n_iter = df.training_iteration.iat[-1]
 
-            if n_iter < 6:
+            if n_iter < self.benchmark_params.sumo_actuated_simulations:
                 return
 
         if self.num_traffic_lights == 1:

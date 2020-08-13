@@ -7,9 +7,7 @@ from flow.envs.multiagent.decentralized_env import MultiTrafficLightGridPOEnvPL
 from flow.networks import TrafficLightGridNetwork
 from flow.controllers import SimCarFollowingController, GridRouter
 from flow.core.traffic_light_utils import get_non_flow_params, get_flow_params
-from flow.envs.presslight import PressureCentLightGridEnv, PressureDecentLightGridEnv
-from flow.envs.thesis import ThesisCentLightGridEnv, ThesisDecentLightGridEnv
-from flow.core.benchmark_params import BenchmarkParams
+
 
 N_ROLLOUTS = 1  # number of rollouts per training iteration
 N_CPUS = 1  # number of parallel workers
@@ -117,13 +115,11 @@ else:
         add_net_params=additional_net_params)
 
 env_name_ = MultiTrafficLightGridPOEnvTH, MultiTrafficLightGridPOEnvPL
-press_ = PressureCentLightGridEnv, PressureDecentLightGridEnv
-thesis_ = ThesisCentLightGridEnv, ThesisDecentLightGridEnv
 
 
 flow_params = dict(
     # name of the experiment
-    exp_tag='TEST_1_Test',
+    exp_tag='Test',
 
     # name of the flow environment the experiment is running on
     env_name=env_name_[0],
@@ -153,8 +149,8 @@ flow_params = dict(
             "tl_type": "actuated",
             "num_local_edges": 4,
             "num_local_lights": 4,
-            # "benchmark": ThesisCentLightGridEnv,
-            # "benchmark_params": BenchmarkParams
+            "benchmark": "PressureLightGridEnv",
+            "benchmark_params": "BenchmarkParams"
         }
         # additional_params=ADDITIONAL_ENV_PARAMS,
     ),

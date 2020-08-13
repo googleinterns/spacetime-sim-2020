@@ -4,7 +4,7 @@ from flow.core.traffic_light_utils import color_vehicles, get_id_within_dist
 ID_IDX = 1
 
 
-class PressureDecentLightGridEnv:
+class PressureLightGridEnv:
 
     def __init__(self, params_obj):
         """Initialize the class with given BenchmarkParams object"""
@@ -19,7 +19,7 @@ class PressureDecentLightGridEnv:
         self.edge_pressure_dict = dict()
         self.waiting_times = dict()
 
-    def obs_shape_func(self, num_traffic_lights):
+    def obs_shape_func(self):
         """Define the shape of the observation space for the PressLight benchmark"""
 
         obs_shape = 14
@@ -31,7 +31,8 @@ class PressureDecentLightGridEnv:
                   _get_relative_node,
                   direction,
                   currently_yellow,
-                  step_counter):
+                  step_counter,
+                  rl_id):
 
         """See parent class.
 
@@ -53,81 +54,50 @@ class PressureDecentLightGridEnv:
         # collect list of names of inner edges
         internal_edges = get_internal_edges(kernel)
 
-        for rl_id in kernel.traffic_light.get_ids():
-            # collect observations for each traffic light
+        # collect observations for each traffic light
 
-            # collect and set edge names and ids
-            incoming_edges, local_edge_numbers, local_id_nums = get_edge_params(rl_id,
-                                                                                network,
-                                                                                kernel,
-                                                                                _get_relative_node)
+        # collect and set edge names and ids
+        incoming_edges, local_edge_numbers, local_id_nums = get_edge_params(rl_id,
+                                                                            network,
+                                                                            kernel,
+                                                                            _get_relative_node)
 
-            # define incoming edges
-            edge_pressure_state = []
-            for edge_ in incoming_edges:
+        # define incoming edges
+        edge_pressure_state = []
+        for edge_ in incoming_edges:
 
-                # get outgoing edge
-                outgoing_edge = get_outgoing_edge(kernel, edge_, internal_edges)
+            # get outgoing edge
+            outgoing_edge = get_outgoing_edge(kernel, edge_, internal_edges)
 
-                # collect observed ids within distances and color them
-                observed_ids_ahead, observed_ids_behind = get_observed_ids(kernel,
-                                                                           edge_,
-                                                                           outgoing_edge,
-                                                                           self.benchmark_params)
+            # collect observed ids within distances and color them
+            observed_ids_ahead, observed_ids_behind = get_observed_ids(kernel,
+                                                                       edge_,
+                                                                       outgoing_edge,
+                                                                       self.benchmark_params)
 
-                # get edge pressures of those edges
-                edge_pressure_state += [len(observed_ids_ahead) - len(observed_ids_behind)]
+            # get edge pressures of those edges
+            edge_pressure_state += [len(observed_ids_ahead) - len(observed_ids_behind)]
 
-            # for each incoming edge, store the pressure terms to be used in compute reward
-            self.edge_pressure_dict[rl_id] = edge_pressure_state
+        # for each incoming edge, store the pressure terms to be used in compute reward
+        self.edge_pressure_dict[rl_id] = edge_pressure_state
 
-            # for each  intersection, collect traffic light state
-            light_states_ = get_light_states(kernel, rl_id)
+        # for each  intersection, collect traffic light state
+        light_states_ = get_light_states(kernel, rl_id)
 
-            observation = np.array(np.concatenate(
-                [self.edge_pressure_dict[rl_id],
-                 local_edge_numbers,
-                 direction[local_id_nums],
-                 light_states_
-                 ]))
-            obs.update({rl_id: observation})
+        observation = np.array(np.concatenate(
+            [self.edge_pressure_dict[rl_id],
+             local_edge_numbers,
+             direction[local_id_nums],
+             light_states_
+             ]))
 
-        return obs
+        return observation
 
     def compute_reward(self, rl_actions, step_counter, action_dict=None,
                        rl_id=None, **kwargs):
         """See class definition."""
 
         return -sum(self.edge_pressure_dict[rl_id])
-
-
-class PressureCentLightGridEnv(PressureDecentLightGridEnv):
-    """TODO: cite paper"""
-
-    def obs_shape_func(self, num_traffic_lights):
-        """Define the shape of the observation space for the PressLight benchmark"""
-
-        obs_shape = super().obs_shape_func(num_traffic_lights)
-        return obs_shape * num_traffic_lights
-
-    def get_state(self,
-                  kernel,
-                  network,
-                  _get_relative_node,
-                  direction,
-                  currently_yellow,
-                  step_counter):
-        """ see parent class"""
-
-        obs = super().get_state(kernel,
-                                network,
-                                _get_relative_node,
-                                direction,
-                                currently_yellow,
-                                step_counter)
-
-        final_obs = np.concatenate(list((obs.values())))
-        return final_obs
 
 
 def get_internal_edges(kernel):
@@ -159,6 +129,12 @@ def get_outgoing_edge(kernel, edge_, internal_edges):
         -> --incoming---|---outgoing--->
                         |
                      outgoing
+    Parameters:
+    ---------
+
+    Returns:
+    ---------
+
     """
     if kernel.network.rts[edge_]:
         # if edge is an outer(global) incoming edge,

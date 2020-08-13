@@ -10,9 +10,6 @@ from flow.envs.multiagent.decentralized_env import MultiTrafficLightGridPOEnvPL
 from flow.networks import TrafficLightGridNetwork
 from flow.controllers import SimCarFollowingController, GridRouter
 from flow.core.traffic_light_utils import get_non_flow_params, get_flow_params
-from flow.envs.presslight import PressureCentLightGridEnv, PressureDecentLightGridEnv
-from flow.envs.thesis import ThesisCentLightGridEnv, ThesisDecentLightGridEnv
-from flow.core.benchmark_params import BenchmarkParams
 
 N_ROLLOUTS = 1  # number of rollouts per training iteration
 N_CPUS = 1  # number of parallel workers
@@ -95,9 +92,9 @@ phases = [{
     "maxDur": "6",
     "state": "ryry"
 }]
-# tl_logic.add("center0", phases=phases, programID=1, tls_type="actuated")
-# tl_logic.add("center1", phases=phases, programID=1, tls_type="actuated")
-# tl_logic.add("center2", phases=phases, programID=1, tls_type="actuated")
+tl_logic.add("center0", phases=phases, programID=1, tls_type="actuated")
+tl_logic.add("center1", phases=phases, programID=1, tls_type="actuated")
+tl_logic.add("center2", phases=phases, programID=1, tls_type="actuated")
 
 additional_net_params = {
     "grid_array": grid_array,
@@ -120,13 +117,10 @@ else:
         add_net_params=additional_net_params)
 
 env_name_ = MultiTrafficLightGridPOEnvTH, MultiTrafficLightGridPOEnvPL
-press_ = PressureCentLightGridEnv, PressureDecentLightGridEnv
-thesis_ = ThesisCentLightGridEnv, ThesisDecentLightGridEnv
-
 
 flow_params = dict(
     # name of the experiment
-    exp_tag='TESTING',
+    exp_tag='THESIS_test',
 
     # name of the flow environment the experiment is running on
     env_name=MultiTrafficLightGridPOEnvPL,
@@ -147,7 +141,7 @@ flow_params = dict(
     # environment related parameters (see flow.core.params.EnvParams)
 
     env=EnvParams(
-        horizon=1000,
+        horizon=5400,
         additional_params={
             "target_velocity": 11,
             "switch_time": 4,
@@ -156,7 +150,7 @@ flow_params = dict(
             "tl_type": "actuated",
             "num_local_edges": 4,
             "num_local_lights": 4,
-            "benchmark": "ThesisDecentLightGridEnv",  #explain why this should be a string
+            "benchmark": "PressureLightGridEnv",  #explain why this should be a string
             "benchmark_params": "BenchmarkParams"
         }
         # additional_params=ADDITIONAL_ENV_PARAMS,
