@@ -1,7 +1,13 @@
-"""Multi-agent environments for networks with traffic lights.
+"""Centralized single and multi-agent environment for networks with traffic lights.
 
 These environments are used to train traffic lights to regulate traffic flow
 through an n x m traffic light grid.
+
+Note: Centralized Environment:
+                            concatenates all observations of all agents into one array (see get_state method)
+                            sums  all reward values of all agents(see compute_reward method)
+                            the observation space is (observation space for single agent * number of agents)
+                            Action space is defined for all agents
 """
 
 import numpy as np
@@ -16,9 +22,12 @@ from flow.envs import presslight
 from flow.core import benchmark_params
 import itertools
 
+# index to split traffic lights string eg. "center0".split("center")[ID_IDX] = 0
+ID_IDX = 1
 
 modules = [thesis, presslight]
 
+# TODO: Explain in Readme
 ADDITIONAL_ENV_PARAMS = {
     # minimum switch time for each traffic light (in seconds)
     "switch_time": 2.0,
@@ -36,15 +45,12 @@ ADDITIONAL_PO_ENV_PARAMS = {
     "target_velocity": 30,
 }
 
-# Index for retrieving ID when splitting node name, e.g. ":center#"
-ID_IDX = 1
 
+class CentralizedGridEnv(TrafficLightGridPOEnv):
 
-class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
+    """ Inherited for Baseline Implementation
 
-    """ Inherited for PressLight baseline Implementation
-
-    Multiagent shared model version of TrafficLightGridPOEnv.
+    Centralized model version of TrafficLightGridPOEnv.
 
     Required from env_params: See parent class
 
@@ -64,9 +70,9 @@ class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
     def __init__(self, env_params, sim_params, network, simulator='traci'):
         super().__init__(env_params, sim_params, network, simulator)
 
-        self.rew_list = []
+        """Initialized centralized environment with benchmark string parameters"""
 
-        # TODO: remove hardcode
+        # obtain the class objects (parameters and experiments) from the defined benchmark string names
         self.benchmark_params = getattr(benchmark_params, env_params.additional_params["benchmark_params"])()
         for mod in modules:
             try:
@@ -76,15 +82,35 @@ class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
                 continue
 
         self.action_dict = dict()
+        self.rew_list = []
 
     def compute_reward(self, rl_actions, **kwargs):
 
-        """TODO add for loop here"""
+        """Reward function for the RL agent(s).
+          Calls benchmark object to compute reward for each traffic light
+
+        Parameters
+        ----------
+        rl_actions : array_like
+            actions performed by rl agents
+        kwargs : dict
+            other parameters of interest. Contains a "fail" element, which
+            is True if a vehicle crashed, and False otherwise
+
+        Returns
+        -------
+        reward : float
+        """
+
+        # if no rl_action, SUMO default (either actuated or fixed) is executed,
+        # non reward required.
         if rl_actions is None:
             return {}
         rews = {}
 
         rl_ids = self.k.traffic_light.get_ids()
+
+        # collect required iterable for rl_actions and rl_ids
         if not self.action_dict:
             rl_id_action_dict = rl_actions.items()
 
@@ -92,6 +118,7 @@ class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
             actions = self.action_dict[rl_actions]
             rl_id_action_dict = zip(rl_ids, actions)
 
+        # compute rewards for each rl_id
         for rl_id, rl_action in rl_id_action_dict:
             rews[rl_id] = self.benchmark.compute_reward(rl_actions,
                                           self.step_counter,
@@ -99,15 +126,26 @@ class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
                                           rl_id=rl_id,
                                           **kwargs)
 
+        # add all rewards for each traffic light
         final_rew = sum(list(rews.values()))
         return final_rew
 
     def get_state(self):
+        """Return the state of the simulation as perceived by the RL agent.
+           Calls benchmark object to compute state for each traffic light
 
-        obs = {}
+        Returns
+        -------
+        final_obs : array_like
+            information on the state of the traffic lights, which is provided to the
+            agent
+        """
 
+        observations = {}
+
+        # collect states/observations for for each rl_id
         for rl_id in self.k.traffic_light.get_ids():
-            obs[rl_id] = self.benchmark.get_state(kernel=self.k,
+            observations[rl_id] = self.benchmark.get_state(kernel=self.k,
                                             network=self.network,
                                             _get_relative_node=self._get_relative_node,
                                             direction=self.direction,
@@ -115,17 +153,21 @@ class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
                                             step_counter=self.step_counter,
                                             rl_id=rl_id)
 
-        final_obs = np.concatenate(list((obs.values())))
+        # concatenate all states for each traffic light
+        final_obs = np.concatenate(list((observations.values())))
         return final_obs
 
     @property
     def observation_space(self):
-        """State space that is partially observed.
+        """Identify the dimensions and bounds of the observation space.
 
-        Velocities, distance to intersections, edge number (for nearby
-        vehicles) from each direction, local edge information, and traffic
-        light state.
+        Returns:
+        ---------
+        gym.spaces.box object
+            contains shape and bounds of observation space characterized
+            by the benchmark and number of traffic lights
         """
+
         tl_box = Box(
             low=-np.inf,
             high=np.inf,
@@ -135,7 +177,21 @@ class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
 
     @property
     def action_space(self):
-        """See class definition."""
+        """Identify the dimensions and bounds of the action space.
+          Actions characterized using a dict that map agent choices to traffic light actions:
+            ie. for single light: 0, 1
+                                 to not switch or to switch traffic light respectively
+                                 {0: (0), 1:(1)}
+                for multi light: 0, 1, 2, 3, 4 ...
+                                 agents values corresponding to action for each traffic light
+                                 example for 3 lights: {1: (1,0,0), 2:(0,1,0) ..
+
+        Returns
+        -------
+        gym.spaces.Discrete object
+            contains shape and bounds of action space characterized
+
+        """
 
         # get all combinations of actions [(1,0,0), (0,1,0)...
         lst = list(itertools.product([0, 1], repeat=self.num_traffic_lights))
@@ -184,19 +240,31 @@ class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
         return next_observation, reward, done, infos
 
     def _apply_rl_actions(self, rl_actions):
-        """
-        TODO: Test for multi-centralized vs single centralized
-        See parent class.
+        """Specify the actions to be performed by the rl agent(s).
 
-        Issues action for each traffic light agent.
+        If no actions are provided at any given step, the rl agents default to
+        performing actions specified by SUMO.
+
+        Parameters
+        ----------
+        rl_actions : int
+            actions provided by the RL algorithm
+            ie. for single light: 0, 1
+                                 switch or not to switch traffic light respectively
+                                 {0: (0), 1:(1)}
+                for multi light: 0, 1, 2, 3, 4 ...
+                                 agents values corresponding to action for each traffic light
+                                 example for 3 lights: {1: (1,0,0), 2:(0,1,0) ..
+
         """
-        # TODO(Gilbert): Use flag to control it
+        # flag to activate sumo actuate baselines or not to
         if self.benchmark_params.sumo_actuated_baseline:
-            # return
+
+            # check file to track number of simulations completed during training.
             if not os.path.isfile(self.benchmark_params.full_path):
                 return
             else:
-                # read csv
+                # read csv file if it exists
                 df = pd.read_csv(self.benchmark_params.full_path, index_col=False)
                 n_iter = df.training_iteration.iat[-1]
 
@@ -204,18 +272,29 @@ class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
                 return
 
         if self.num_traffic_lights == 1:
-            TrafficLightGridPOEnv._apply_rl_actions(self, rl_actions) # single light
+            TrafficLightGridPOEnv._apply_rl_actions(self, rl_actions) # single light. TODO: use new code
 
         else:
             self._apply_rl_actions_centralized_multi(rl_actions)
 
     def _apply_rl_actions_centralized_multi(self, rl_actions):
+        """Specify the actions to be performed by the rl agent(s).
+
+        If no actions are provided at any given step, the rl agents default to
+        performing actions specified by SUMO.
+
+        Parameters
+        ----------
+        rl_actions : int
+            actions provided by the RL algorithm
+            ie. for single light: 0 or 1
+                                 switch or not to switch traffic light respectively
+                for multi light: 0 ,1 ,2 ,3 4 ...
+                                 agents values corresponding to action for each traffic light
+                                 example for 3 lights: {1: (1,0,0), 2:(0,1,0) ..
 
         """
-        See parent class.
 
-        Issues action for each traffic light agent.
-        """
         rl_ids = np.arange(self.num_traffic_lights)
         actions = self.action_dict[rl_actions]
 
@@ -232,7 +311,7 @@ class MultiTrafficLightGridPOEnvTH(TrafficLightGridPOEnv):
                 self.last_change[i] += self.sim_step
                 # Check if our timer has exceeded the yellow phase, meaning it
                 # should switch to red
-                if self.last_change[i] >= self.min_switch_time:
+                if self.last_change[i] >= self.min_switch_time: #TODO: rename yellow phase duration
                     if self.direction[i] == 0:
                         self.k.traffic_light.set_state(
                             node_id='center{}'.format(i), state="GrGr")

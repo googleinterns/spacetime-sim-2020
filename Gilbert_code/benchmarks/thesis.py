@@ -66,7 +66,7 @@ class ThesisLightGridEnv:
             (from flow.kernel in parent class)
                 example: kernel.vehicle.get_accel(veh_id)
                         returns the acceleration of the vehicle id
-        network: obj
+        network: obj TODO: Remove
             (from flow.network)
             object to collect network information
             example: kernel.network.rts

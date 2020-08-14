@@ -66,7 +66,7 @@ class PressureLightGridEnv:
             (from flow.kernel in parent class)
                 example: kernel.vehicle.get_accel(veh_id)
                         returns the acceleration of the vehicle id
-        network: obj
+        network: obj TODO: Remove
             (from flow.network)
             object to collect network information
             example: kernel.network.rts
@@ -77,6 +77,9 @@ class PressureLightGridEnv:
             Multi-dimensional array keeping track of which direction in traffic
             light is flowing. 0 indicates flow from top to bottom, and
             1 indicates flow from left to right
+
+        step_counter: int
+            current simulation time step
 
         rl_id: string
             Name of current traffic light node/intersection being observed
@@ -154,7 +157,7 @@ class PressureLightGridEnv:
         Parameters:
         -----------
         step_counter: int
-            current simulation step
+            current simulation time step
 
         rl_id: string
             Name of current traffic light node/intersection being observed

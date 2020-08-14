@@ -23,7 +23,7 @@ class BenchmarkParams:
         # logging evolution of reward during a simulation
         self.log_rewards_during_iteration = False
 
-        # activate sumo actuated baslines during training for first 6 iterations
+        # activate sumo actuated baseline during training for first 6 iterations
         self.sumo_actuated_baseline = True
         self.sumo_actuated_simulations = 6
 
@@ -37,7 +37,7 @@ class BenchmarkParams:
 
         # choose demand pattern for naming the tensorboard directory logging
         # self.demand = "L"
-        self.demand = "THESIS_CENTRALIZED_B"
+        self.demand = "CENTRALIZED_PRESSURE_B"
 
         # choose exp running, can either be "rl" or "non_rl"
         self.exp = "rl"
@@ -51,7 +51,7 @@ class BenchmarkParams:
         # ie. if the training is at simulation 50, the last value add the created csv file, will be 50
         # this helps us keep track of the average travel times, rewards and other values at the end
         # of each simulation
-        file_location = root_dir + '/ray_results/grid1x3_learning_rate_0.01'
+        file_location = root_dir + '/ray_results/grid-trail'
         self.full_path = file_location + self.filename
 
         # RGB colors for vehicles
