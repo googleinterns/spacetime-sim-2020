@@ -89,10 +89,10 @@ phases = [{
     "maxDur": "6",
     "state": "ryry"
 }]
-# tl_logic.add("center0", phases=phases, programID=1, tls_type="actuated")
-# tl_logic.add("center1", phases=phases, programID=1, tls_type="actuated")
-# tl_logic.add("center2", phases=phases, programID=1, tls_type="actuated")
-# tl_logic.add("center3", phases=phases, programID=1, tls_type="actuated")
+tl_logic.add("center0", phases=phases, programID=1, tls_type="actuated")
+tl_logic.add("center1", phases=phases, programID=1, tls_type="actuated")
+tl_logic.add("center2", phases=phases, programID=1, tls_type="actuated")
+tl_logic.add("center3", phases=phases, programID=1, tls_type="actuated")
 
 additional_net_params = {
     "grid_array": grid_array,
@@ -113,7 +113,6 @@ else:
     initial_config, net_params = get_non_flow_params(
         enter_speed=v_enter,
         add_net_params=additional_net_params)
-
 
 
 flow_params = dict(
@@ -148,7 +147,7 @@ flow_params = dict(
             "tl_type": "actuated",
             "num_local_edges": 4,
             "num_local_lights": 4,
-            "benchmark": "PressureLightGridEnv",
+            "benchmark": "ThesisLightGridEnv",
             "benchmark_params": "BenchmarkParams"
         }
         # additional_params=ADDITIONAL_ENV_PARAMS,

@@ -150,26 +150,21 @@ def setup_exps_rllib(flow_params,
     agent_cls = get_agent_class(alg_run)
     config = deepcopy(agent_cls._default_config)
 
-    config["num_workers"] = 1
+    config["num_workers"] = n_cpus
     config["train_batch_size"] = horizon * n_rollouts
     config["gamma"] = 0.999  # discount rate
     config["model"].update({"fcnet_hiddens": [256]})
-    # config["model"].update({"fcnet_activation": "relu"})  ##test 1
+    # config["model"].update({"fcnet_activation": "relu"})
     config["horizon"] = horizon
     config["exploration_fraction"] = 0.5
     # config["lr"] = tune.grid_search([0.0001, 0.001, 0.1])
     config["lr"] = 0.001
-    # config['adam_epsilon'] = 0.001
-    # config["grad_norm_clipping"]= 100
-    # config["train_batch_size"] = 20 #test 2
-    # config["schedule_max_timesteps"]= 10000000000
 
     # PPO specific params
     # config["use_gae"] = True
     # config["lambda"] = 0.97
     # config["kl_target"] = 0.02
     # config["num_sgd_iter"] = 10
-
 
     # save the flow params for replay
     flow_json = json.dumps(

@@ -111,6 +111,7 @@ class ThesisLightGridEnv:
         # collect list of names of inner edges
         internal_edges = get_internal_edges(kernel)
         all_ids_incoming = dict()
+        all_ids_incoming[rl_id] = []
 
         # collect and set edge names and ids
         incoming_edges, local_edge_numbers, local_id_nums = get_edge_params(rl_id,

@@ -3,8 +3,8 @@ from flow.controllers import GridRouter
 from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams
 from flow.core.params import TrafficLightParams
 from flow.core.params import InFlows, SumoCarFollowingParams, VehicleParams
-from flow.envs.centralized_env import MultiTrafficLightGridPOEnvTH
-from flow.envs.multiagent.decentralized_env import MultiTrafficLightGridPOEnvPL
+from flow.envs.multiagent.decentralized_env import DeCentralizedGridEnv
+from flow.envs.centralized_env import CentralizedGridEnv
 # from flow.envs.centralized_multi_agent_thesis import TrafficLightSingleMultiEnv
 from flow.networks import TrafficLightGridNetwork
 from flow.controllers import SimCarFollowingController, GridRouter
@@ -94,6 +94,7 @@ phases = [{
 # tl_logic.add("center0", phases=phases, programID=1, tls_type="actuated")
 # tl_logic.add("center1", phases=phases, programID=1, tls_type="actuated")
 # tl_logic.add("center2", phases=phases, programID=1, tls_type="actuated")
+# tl_logic.add("center3", phases=phases, programID=1, tls_type="actuated")
 
 additional_net_params = {
     "grid_array": grid_array,
@@ -115,15 +116,13 @@ else:
         enter_speed=v_enter,
         add_net_params=additional_net_params)
 
-env_name_ = MultiTrafficLightGridPOEnvTH, MultiTrafficLightGridPOEnvPL
-
 
 flow_params = dict(
     # name of the experiment
-    exp_tag='grid-trail',
+    exp_tag='test',
 
     # name of the flow environment the experiment is running on
-    env_name=env_name_[0],
+    env_name=CentralizedGridEnv,
 
     # name of the network class the experiment is running on
     network=TrafficLightGridNetwork,

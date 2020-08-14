@@ -2,7 +2,7 @@
 #copy changed files in Gilbert_code/ to ~/flow/...
 
 #envs
-cp Gilbert_code/single_agent/__init__.py ~/flow//flow/envs
+cp Gilbert_code/single_agent/__init__.py ~/flow/flow/envs
 cp Gilbert_code/multi_agent/__init__.py ~/flow/flow/envs/multiagent
 
 #environments
