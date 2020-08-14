@@ -13,7 +13,7 @@ Note: Centralized Environment:
 import numpy as np
 from gym.spaces.box import Box
 from gym.spaces.discrete import Discrete
-from flow.core.traffic_light_utils import log_rewards, log_travel_times, get_training_iter
+from flow.core.traffic_light_utils import log_rewards, log_travel_times, get_training_iter, execute_action
 from flow.envs.traffic_light_grid import TrafficLightGridPOEnv
 import pandas as pd
 import os
@@ -258,77 +258,22 @@ class CentralizedGridEnv(TrafficLightGridPOEnv):
 
         """
         # flag to activate sumo actuate baselines or not to
-        if self.benchmark_params.sumo_actuated_baseline:
-
-            # check file to track number of simulations completed during training.
-            if not os.path.isfile(self.benchmark_params.full_path):
-                return
-            else:
-                # read csv file if it exists
-                df = pd.read_csv(self.benchmark_params.full_path, index_col=False)
-                n_iter = df.training_iteration.iat[-1]
-
-            if n_iter < self.benchmark_params.sumo_actuated_simulations:
-                return
-
-        if self.num_traffic_lights == 1:
-            TrafficLightGridPOEnv._apply_rl_actions(self, rl_actions) # single light. TODO: use new code
-
-        else:
-            self._apply_rl_actions_centralized_multi(rl_actions)
-
-    def _apply_rl_actions_centralized_multi(self, rl_actions):
-        """Specify the actions to be performed by the rl agent(s).
-
-        If no actions are provided at any given step, the rl agents default to
-        performing actions specified by SUMO.
-
-        Parameters
-        ----------
-        rl_actions : int
-            actions provided by the RL algorithm
-            ie. for single light: 0 or 1
-                                 switch or not to switch traffic light respectively
-                for multi light: 0 ,1 ,2 ,3 4 ...
-                                 agents values corresponding to action for each traffic light
-                                 example for 3 lights: {1: (1,0,0), 2:(0,1,0) ..
-
-        """
+        # if self.benchmark_params.sumo_actuated_baseline:
+        #
+        #     # check file to track number of simulations completed during training.
+        #     if not os.path.isfile(self.benchmark_params.full_path):
+        #         return
+        #     else:
+        #         # read csv file if it exists
+        #         df = pd.read_csv(self.benchmark_params.full_path, index_col=False)
+        #         n_iter = df.training_iteration.iat[-1]
+        #
+        #     if n_iter < self.benchmark_params.sumo_actuated_simulations:
+        #         return
 
         rl_ids = np.arange(self.num_traffic_lights)
         actions = self.action_dict[rl_actions]
 
         for i, rl_action in zip(rl_ids, actions):
-
-            if self.discrete:
-                action = rl_action
-            else:
-                # convert values less than 0.0 to zero and above to 1. 0's
-                # indicate that we should not switch the direction
-                action = rl_action > 0.0
-
-            if self.currently_yellow[i] == 1:  # currently yellow
-                self.last_change[i] += self.sim_step
-                # Check if our timer has exceeded the yellow phase, meaning it
-                # should switch to red
-                if self.last_change[i] >= self.min_switch_time: #TODO: rename yellow phase duration
-                    if self.direction[i] == 0:
-                        self.k.traffic_light.set_state(
-                            node_id='center{}'.format(i), state="GrGr")
-                    else:
-                        self.k.traffic_light.set_state(
-                            node_id='center{}'.format(i), state='rGrG')
-                    self.currently_yellow[i] = 0
-            else:
-                if action:
-                    if self.direction[i] == 0:
-                        self.k.traffic_light.set_state(
-                            node_id='center{}'.format(i), state='yryr')
-                    else:
-                        self.k.traffic_light.set_state(
-                            node_id='center{}'.format(i), state='ryry')
-                    self.last_change[i] = 0.0
-                    self.direction[i] = not self.direction[i]
-                    self.currently_yellow[i] = 1
-
+            execute_action(self, i, rl_action)
 

@@ -12,8 +12,7 @@ from flow.envs.multiagent.highway import MultiAgentHighwayPOEnv
 from flow.envs.multiagent.merge import MultiAgentMergePOEnv
 from flow.envs.multiagent.i210 import I210MultiEnv
 
-# implemented for Presslight multi_agent
-from flow.envs.multiagent.decentralized_env import MultiTrafficLightGridPOEnvPL
+from flow.envs.multiagent.decentralized_env import DeCentralizedGridEnv
 
 __all__ = [
     'MultiEnv',
@@ -25,5 +24,5 @@ __all__ = [
     'MultiAgentWaveAttenuationPOEnv',
     'MultiAgentMergePOEnv',
     'I210MultiEnv',
-    'MultiTrafficLightGridPOEnvPL' # Gilbert's addition: multi agent traffic light
+    'DeCentralizedGridEnv' # Gilbert's addition: multi agent traffic light
 ]

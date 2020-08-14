@@ -5,8 +5,7 @@ from flow.utils.registry import make_create_env
 from flow.core.params import SumoParams, EnvParams
 from flow.core.params import TrafficLightParams
 from flow.core.params import SumoCarFollowingParams, VehicleParams
-from flow.envs.centralized_env import MultiTrafficLightGridPOEnvTH
-from flow.envs.multiagent.decentralized_env import MultiTrafficLightGridPOEnvPL
+from flow.envs.multiagent.decentralized_env import DeCentralizedGridEnv
 from flow.networks import TrafficLightGridNetwork
 from flow.controllers import SimCarFollowingController, GridRouter
 from flow.core.traffic_light_utils import get_non_flow_params, get_flow_params
@@ -37,7 +36,7 @@ inner_length = 240
 long_length = 240
 short_length = 240
 n_rows = 1
-n_columns = 3
+n_columns = 1
 num_cars_left = 0 #up
 num_cars_right = 0 #bottom
 num_cars_top = 0 #right
@@ -92,9 +91,10 @@ phases = [{
     "maxDur": "6",
     "state": "ryry"
 }]
-tl_logic.add("center0", phases=phases, programID=1, tls_type="actuated")
-tl_logic.add("center1", phases=phases, programID=1, tls_type="actuated")
-tl_logic.add("center2", phases=phases, programID=1, tls_type="actuated")
+# tl_logic.add("center0", phases=phases, programID=1, tls_type="actuated")
+# tl_logic.add("center1", phases=phases, programID=1, tls_type="actuated")
+# tl_logic.add("center2", phases=phases, programID=1, tls_type="actuated")
+# tl_logic.add("center3", phases=phases, programID=1, tls_type="actuated")
 
 additional_net_params = {
     "grid_array": grid_array,
@@ -116,14 +116,13 @@ else:
         enter_speed=v_enter,
         add_net_params=additional_net_params)
 
-env_name_ = MultiTrafficLightGridPOEnvTH, MultiTrafficLightGridPOEnvPL
 
 flow_params = dict(
     # name of the experiment
-    exp_tag='THESIS_test',
+    exp_tag="Test",
 
     # name of the flow environment the experiment is running on
-    env_name=MultiTrafficLightGridPOEnvPL,
+    env_name=DeCentralizedGridEnv,
 
     # name of the network class the experiment is running on
     network=TrafficLightGridNetwork,

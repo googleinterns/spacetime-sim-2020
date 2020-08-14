@@ -24,20 +24,21 @@ class BenchmarkParams:
         self.log_rewards_during_iteration = False
 
         # activate sumo actuated baseline during training for first 6 iterations
-        self.sumo_actuated_baseline = True
+        self.sumo_actuated_baseline = False
         self.sumo_actuated_simulations = 6
 
         # plot and save histogram of travel time distribution at end of simulation
-        self.save_plots = False
+        self.save_plots = True
         # name and title of histogram (from above) to be saved
-        self. exp_being_run = "TEST_SUMO"
+        self.exp_being_run = "PRESSURE_CENTRALIZED"
 
         # choose look-ahead distance can be either 43, 80, 160 or 240
         self.look_ahead = 43
 
         # choose demand pattern for naming the tensorboard directory logging
         # self.demand = "L"
-        self.demand = "CENTRALIZED_PRESSURE_B"
+        # self.demand = "2x2DECENTRALIZED_Pressure_B"
+        self.demand = "TEST"
 
         # choose exp running, can either be "rl" or "non_rl"
         self.exp = "rl"

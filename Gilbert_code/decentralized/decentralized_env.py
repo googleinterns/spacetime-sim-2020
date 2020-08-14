@@ -14,7 +14,7 @@ from flow.envs.multiagent.traffic_light_grid import MultiTrafficLightGridPOEnv
 from flow.envs.centralized_env import CentralizedGridEnv
 from gym.spaces.box import Box
 from gym.spaces.discrete import Discrete
-from flow.core.traffic_light_utils import log_rewards, log_travel_times, get_training_iter
+from flow.core.traffic_light_utils import log_rewards, log_travel_times, get_training_iter, execute_action
 import pandas as pd
 import os
 import numpy as np
@@ -182,50 +182,21 @@ class DeCentralizedGridEnv(CentralizedGridEnv, MultiTrafficLightGridPOEnv):
             and the values correspond to either 0  or 1 (to not switch or switch respectively
         """
 
-        if self.benchmark_params.sumo_actuated_baseline:
-            # return
-            if not os.path.isfile(self.benchmark_params.full_path):
-                return
-            else:
-                # read csv
-                df = pd.read_csv(self.benchmark_params.full_path, index_col=False)
-                n_iter = df.training_iteration.iat[-1]
-
-            if n_iter < self.benchmark_params.sumo_actuated_simulations:
-                return
+        # if self.benchmark_params.sumo_actuated_baseline:
+        #     # return
+        #     if not os.path.isfile(self.benchmark_params.full_path):
+        #         return
+        #     else:
+        #         # read csv
+        #         df = pd.read_csv(self.benchmark_params.full_path, index_col=False)
+        #         n_iter = df.training_iteration.iat[-1]
+        #
+        #     if n_iter < self.benchmark_params.sumo_actuated_simulations:
+        #         return
 
         for rl_id, rl_action in rl_actions.items():
             i = int(rl_id.split("center")[ID_IDX])
-            if self.discrete:
-                action = rl_action
-            else:
-                # convert values less than 0.0 to zero and above to 1. 0's
-                # indicate that we should not switch the direction
-                action = rl_action > 0.0
-
-            if self.currently_yellow[i] == 1:  # currently yellow
-                self.last_change[i] += self.sim_step
-                # Check if our timer has exceeded the yellow phase, meaning it
-                # should switch to red
-                if self.last_change[i] >= self.min_switch_time:
-                    if self.direction[i] == 0:
-                        self.k.traffic_light.set_state(
-                            node_id='center{}'.format(i), state="GrGr")
-                    else:
-                        self.k.traffic_light.set_state(
-                            node_id='center{}'.format(i), state='rGrG')
-                    self.currently_yellow[i] = 0
-            else:
-                if action:
-                    if self.direction[i] == 0:
-                        self.k.traffic_light.set_state(
-                            node_id='center{}'.format(i), state='yryr')
-                    else:
-                        self.k.traffic_light.set_state(
-                            node_id='center{}'.format(i), state='ryry')
-                    self.last_change[i] = 0.0
-                    self.direction[i] = not self.direction[i]
-                    self.currently_yellow[i] = 1
+            execute_action(self, i, rl_action)
 
     @property
     def observation_space(self):
@@ -244,6 +215,7 @@ class DeCentralizedGridEnv(CentralizedGridEnv, MultiTrafficLightGridPOEnv):
             shape=(self.benchmark.obs_shape_func(),),
             dtype=np.float32)
         return tl_box
+
     @property
     def action_space(self):
         """Identify the dimensions and bounds of the action space.

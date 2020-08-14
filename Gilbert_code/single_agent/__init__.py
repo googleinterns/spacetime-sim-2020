@@ -21,7 +21,7 @@ from flow.envs.green_wave_env import GreenWaveTestEnv
 
 # implemented for Presslight single agent
 # from flow.envs.centralized_single_agent_presslight import MyGridEnv
-from flow.envs.centralized_env import MultiTrafficLightGridPOEnvTH
+from flow.envs.centralized_env import CentralizedGridEnv
 __all__ = [
     'Env',
     'AccelEnv',
@@ -39,7 +39,7 @@ __all__ = [
     'BottleneckDesiredVelocityEnv',
     'TestEnv',
     'BayBridgeEnv',
-    "MultiTrafficLightGridPOEnvTH",
+    "CentralizedGridEnv",
     # deprecated classes
     'BottleNeckAccelEnv',
     'DesiredVelocityEnv',

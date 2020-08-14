@@ -82,7 +82,7 @@ class PressureLightGridEnv:
             current simulation time step
 
         rl_id: string
-            Name of current traffic light node/intersection being observed
+            name of current traffic light node/intersection being observed
 
         Returns:
         ---------
@@ -103,8 +103,6 @@ class PressureLightGridEnv:
         # (when there is no node in the direction sought). We add a last
         # item to the lists here, which will serve as a default value.
         direction = np.append(direction, [0])
-
-        obs = {}
 
         # collect list of names of inner edges
         internal_edges = get_internal_edges(kernel)

@@ -153,12 +153,12 @@ def setup_exps_rllib(flow_params,
     config["num_workers"] = 1
     config["train_batch_size"] = horizon * n_rollouts
     config["gamma"] = 0.999  # discount rate
-    config["model"].update({"fcnet_hiddens": [10,10,10]})
+    config["model"].update({"fcnet_hiddens": [256]})
     # config["model"].update({"fcnet_activation": "relu"})  ##test 1
     config["horizon"] = horizon
     config["exploration_fraction"] = 0.5
     # config["lr"] = tune.grid_search([0.0001, 0.001, 0.1])
-    config["lr"] = 0.1
+    config["lr"] = 0.001
     # config['adam_epsilon'] = 0.001
     # config["grad_norm_clipping"]= 100
     # config["train_batch_size"] = 20 #test 2
@@ -217,7 +217,7 @@ def train_rllib(submodule, flags):
         "config": {
             **config
         },
-        "checkpoint_freq": 1,
+        "checkpoint_freq": 20,
         "checkpoint_at_end": True,
         "max_failures": 999,
         "stop": {

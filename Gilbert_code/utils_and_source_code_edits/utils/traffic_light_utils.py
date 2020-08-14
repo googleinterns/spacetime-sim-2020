@@ -139,25 +139,41 @@ def gen_demand(horizon,
                is_uniform=True):
 
     """Generate an inflow object of demands.
-    format: object (see imported class: flow.core.params.InFlows)
-            veh_type='human',
-            edge="?",
-            probability=1,
-            depart_lane='free',
-            depart_speed=5,
-            begin="?",
-            number=1)
-    Args:
-      horizon: time period is seconds over which to generate inflows
-      num_veh_per_row: total vehicles to be inserted via each row in the given time horizon.
-      num_veh_per_column: total vehicles to be inserted via each column in the given time horizon.
-      col_edges: a list of strings [top_segment,bottom_segment..] of all incoming column segments
+        format: object (see imported class: flow.core.params.InFlows)
+                veh_type='human',
+                edge="?",
+                probability=1,
+                depart_lane='free',
+                depart_speed=5,
+                begin="?",
+                number=1)
+
+    Parameters:
+    ----------
+      horizon: float
+        time period is seconds over which to generate inflows
+
+      num_veh_per_row: int
+        total vehicles to be inserted via each row in the given time horizon.
+
+      num_veh_per_column: int
+        total vehicles to be inserted via each column in the given time horizon.
+
+      col_edges: list
+        a list of strings [top_segment,bottom_segment..] of all incoming column segments
         where each segment is the column segment id in sumo.
-      row_edges: a list of strings [right_segment, left_segment..] of all incoming row segments
+
+      row_edges: list
+        a list of strings [right_segment, left_segment..] of all incoming row segments
         where each segment is the row segment id in sumo.
-      is_uniform: bool, if false then generate a normal distribution
+
+      is_uniform: bool,
+        if false then generate a normal distribution
+
     Returns:
-      an inflow object containing predefined demands for FLOW.
+    ---------
+    inflow: object
+      `an inflow object containing predefined demands for FLOW.
     """
 
     inflow = InFlows()
@@ -236,10 +252,10 @@ def gen_demand(horizon,
 def get_truncated_normal(mean=0, sd=1800, low=0, upp=10):
     """Generate a peak distribution of values centred at the mean
     Args:
-        mean: value to center distribution on
-        sd: standard deviation of interest
-        low: lowest value to consider as lower bound when sampling
-        upp: highest value to consider as higher bound when sampling
+        mean: int value to center distribution on
+        sd: int value of standard deviation of interest
+        low: int value of lowest value to consider as lower bound when sampling
+        upp: int value of highest value to consider as higher bound when sampling
 
     Returns:
         int: randomly selected value given bounds and parameters above
@@ -292,17 +308,33 @@ def log_travel_times(rl_actions,
 
     Parameters
     ----------
-     rl_actions : array_like
-     FIXME
+     rl_actions : dict or int
+        actions provided by the rl algorithm
 
-        a list of actions provided by the rl algorithm
      iter_: int
-        value of training iteration currently being simulated
+        value of simulation step currently being trained/run
+        Note: if the training is at simulation 50, iter_ = 50
+
+     obj: object
+        BenchmarkParams object containing benchmark parameters
+
+     network: obj
+        (from flow.network)
+        object to collect network information
+        example: kernel.network.rts
+                returns a dict containing list of strings or
+                all the route edge names
+
+    sim_params : flow.core.params.SimParams
+        simulation-specific parameters
+
+    step_counter: int
+        current simulation time step
 
     """
 
-    save_plots = obj.save_plots,
-    exp_being_run = obj.exp_being_run,
+    save_plots = obj.save_plots
+    exp_being_run = obj.exp_being_run
     writer = obj.writer
     exp_name = obj.exp_name
 
@@ -336,19 +368,19 @@ def log_travel_times(rl_actions,
     print("avg_travel_time = " + str(avg))
     print("arrived cars = {}".format(len(info.travel_times)))
     print("last car at = {}".format(max(info.arrival)))
-    # if save_plots:
-    #     plt.hist(info.travel_times, bins=150)
-    #     plt.xlabel("Travel Times (sec)")
-    #     plt.ylabel("Number of vehicles/frequency")
-    #     plt.title("1x3 {} Travel Time Distribution\n "
-    #               "{} Avg Travel Time \n"
-    #               " {} arrived cars,  last car at {}".format(exp_being_run,
-    #                                                          int(avg),
-    #                                                          len(info.travel_times),
-    #                                                          max(info.arrival)))
-    #
-    #     plt.savefig("{}.png".format(exp_being_run))
-    #     plt.show()
+    if save_plots:
+        plt.hist(info.travel_times, bins=150)
+        plt.xlabel("Travel Times (sec)")
+        plt.ylabel("Number of vehicles/frequency")
+        plt.title("1x3 {} Travel Time Distribution\n "
+                  "{} Avg Travel Time \n"
+                  " {} arrived cars,  last car at {}".format(exp_being_run,
+                                                             int(avg),
+                                                             len(info.travel_times),
+                                                             max(info.arrival)))
+
+        plt.savefig("{}.png".format(exp_being_run))
+        plt.show()
     writer.add_scalar(exp_name + '/travel_times ' + string, avg, n_iter)
     writer.add_scalar(exp_name + '/arrived cars ' + string, len(info.travel_times), n_iter)
 
@@ -366,12 +398,17 @@ def log_rewards(rew,
      rew : array_like or int
         single value of current time-step's reward if int
         array or rewards for each time-step for entire simulation
+
      action : array_like
         a list of actions provided by the rl algorithm
-     obj : bool
+
+     obj : object
         object containing tensorboard parameters
+
      n_iter: int
-        value of training iteration currently being simulated
+        value of simulation step currently being trained/run
+        Note: if the training is at simulation 50, iter_ = 50
+
     step_counter: int
         current simulation time step
 
@@ -404,10 +441,17 @@ def get_training_iter(full_path):
     """Create csv file to track train iterations
     iteration steps and update the values
 
+    Parameters:
+    -----------
+    full_path: string
+        file location containing current simulation step
+
     Returns
     ----------
     n_iter: int
-        value of training iteration currently being simulated
+        n_iter: int
+        value of simulation step currently being trained/run
+        Note: if the training is at simulation 50, iter_ = 50
 
     """
 
@@ -443,8 +487,15 @@ def color_vehicles(ids, color, kernel):
     ----------
     ids: list
         list of string ids of vehicles to color
+
     color: tuple
         tuple of RGB color pattern to color vehicles
+
+    kernel: obj
+    Traci API obj to collect current simulation information
+    (from flow.kernel in parent class)
+        example- kernel.vehicle.get_accel(veh_id)
+                returns the acceleration of the vehicle id
 
     """
     for veh_id in ids:
@@ -462,6 +513,15 @@ def get_id_within_dist(edge, direction, kernel, obj):
     direction: string
         the direction of the edge relative to the traffic lights.
         Can be either "ahead" or "behind
+
+    kernel: obj
+    Traci API obj to collect current simulation information
+    (from flow.kernel in parent class)
+        example- kernel.vehicle.get_accel(veh_id)
+                returns the acceleration of the vehicle id
+
+    obj : object
+        object containing tensorboard parameters
 
     Returns
     ----------
@@ -486,15 +546,34 @@ def is_within_look_ahead(kernel, look_ahead):
 
     Parameters
     ----------
-    veh_id: string
-        string id of vehicle in pre-defined lane
+    kernel: obj
+    Traci API obj to collect current simulation information
+    (from flow.kernel in parent class)
+        example- kernel.vehicle.get_accel(veh_id)
+                returns the acceleration of the vehicle id
+
+    look_ahead: int
+        distance for traffic light to look ahead and observe vehicles
 
     Returns
     ----------
-    bool
-        True or False
+    deep_filter: function
+        parameterized function to check whether vehicles are within looking distance
     """
+
     def deep_filter(veh_id):
+        """Return bool whether vehicle is in look_ahead distance
+        Parameters:
+        ----------
+        veh_id: string
+            string id of vehicle
+
+        Returns:
+        --------
+        bool: True or False
+            whether vehicle is within look ahead distance
+
+        """
         if find_intersection_dist(veh_id, kernel) <= look_ahead:
             return True
         else:
@@ -508,16 +587,35 @@ def is_within_look_behind(kernel, look_ahead):
 
     Parameters
     ----------
-    veh_id: string
-        string id of vehicle in pre-defined lane
+    kernel: obj
+    Traci API obj to collect current simulation information
+    (from flow.kernel in parent class)
+        example- kernel.vehicle.get_accel(veh_id)
+                returns the acceleration of the vehicle id
+
+    look_ahead: int
+        distance for traffic light to look behind and observe vehicles
 
     Returns
     ----------
-    bool
-        True or False
+    deep_filter: function
+        parameterized function to check whether vehicles are within looking distance
     """
 
     def deep_filter(veh_id):
+        """Return bool whether vehicle is in look_ahead distance
+        Parameters:
+        ----------
+        veh_id: string
+            string id of vehicle
+
+        Returns:
+        --------
+        bool: True or False
+            whether vehicle is within look behinddistance
+
+        """
+
         if kernel.vehicle.get_position(veh_id) <= look_ahead:
             return True
         else:
@@ -545,8 +643,25 @@ def find_intersection_dist(veh_id, kernel):
 
 
 def get_light_states(kernel, rl_id):
-    """Return current traffic light stats as number:
-    ie either GrGrGr, yryryr, ryryry, rGrGrG"""
+    """Return current traffic light states as number in list:
+
+    Parameters:
+    ----------
+    kernel: obj
+    Traci API obj to collect current simulation information
+    (from flow.kernel in parent class)
+        example- kernel.vehicle.get_accel(veh_id)
+                returns the acceleration of the vehicle id
+
+
+     rl_id: string
+        name id of current traffic light node/intersection
+
+    Returns:
+    ---------
+    light_states__ : list
+        Assigns value to each traffic light state either
+            ie. GrGrGr = [1]"""
 
     light_states = kernel.traffic_light.get_state(rl_id)
 
@@ -606,7 +721,20 @@ def get_internal_edges(kernel):
                  (outer)         (outer)       (outer)
 
 
-    """
+    Parameters:
+    -----------
+    kernel: obj
+    Traci API obj to collect current simulation information
+    (from flow.kernel in parent class)
+        example- kernel.vehicle.get_accel(veh_id)
+                returns the acceleration of the vehicle id
+
+    Returns:
+    ---------
+    internal_edges: list
+        list of all internal edges for each route (including last outgoing edge)
+     """
+
     internal_edges = []
     for i in kernel.network.rts:
         if kernel.network.rts[i]:
@@ -616,7 +744,7 @@ def get_internal_edges(kernel):
 
 
 def get_outgoing_edge(kernel, edge_, internal_edges):
-    """Collect the next edge for vehicles given the incoming edge id""
+    """Collect the next (outgoing) edge for vehicles given the incoming edge id""
     ie.
                     incoming
                         |
@@ -624,12 +752,22 @@ def get_outgoing_edge(kernel, edge_, internal_edges):
                         |
                      outgoing
     Parameters:
-    ---------
+    ----------
+    kernel: obj
+    Traci API obj to collect current simulation information
+    (from flow.kernel in parent class)
+        example- kernel.vehicle.get_accel(veh_id)
+                returns the acceleration of the vehicle id
+
+    edge_: string
+        string name of incoming edge
 
     Returns:
     ---------
-
+    outgoing_edge: string
+        outgoing edge (next edge given the incoming edge)
     """
+
     if kernel.network.rts[edge_]:
         # if edge is an outer(global) incoming edge,
         # outgoing edge is the next edge in the route
@@ -643,3 +781,50 @@ def get_outgoing_edge(kernel, edge_, internal_edges):
                 outgoing_edge = lst[index_ + 1]
 
     return outgoing_edge
+
+
+def execute_action(self, i, rl_action):
+    """Execute action on traffic light
+
+    Parameters:
+    ---------
+    self: object
+        environment object to collect variables, simulation properties and set actions in simulation
+
+    i: string
+        string name of traffic light node/intersection being acted on
+
+    rl_action: int
+        agent action value to be executed (see action space for detailed explanation)
+
+    """
+    if self.discrete:
+        action = rl_action
+    else:
+        # convert values less than 0.0 to zero and above to 1. 0's
+        # indicate that we should not switch the direction
+        action = rl_action > 0.0
+
+    if self.currently_yellow[i] == 1:  # currently yellow
+        self.last_change[i] += self.sim_step
+        # Check if our timer has exceeded the yellow phase, meaning it
+        # should switch to red
+        if self.last_change[i] >= self.min_switch_time:  # TODO: rename yellow phase duration
+            if self.direction[i] == 0:
+                self.k.traffic_light.set_state(
+                    node_id='center{}'.format(i), state="GrGr")
+            else:
+                self.k.traffic_light.set_state(
+                    node_id='center{}'.format(i), state='rGrG')
+            self.currently_yellow[i] = 0
+    else:
+        if action:
+            if self.direction[i] == 0:
+                self.k.traffic_light.set_state(
+                    node_id='center{}'.format(i), state='yryr')
+            else:
+                self.k.traffic_light.set_state(
+                    node_id='center{}'.format(i), state='ryry')
+            self.last_change[i] = 0.0
+            self.direction[i] = not self.direction[i]
+            self.currently_yellow[i] = 1
