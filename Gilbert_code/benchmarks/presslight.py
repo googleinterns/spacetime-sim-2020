@@ -53,7 +53,6 @@ class PressureLightGridEnv:
                   network,
                   _get_relative_node,
                   direction,
-                  currently_yellow,
                   step_counter,
                   rl_id):
 
@@ -66,7 +65,8 @@ class PressureLightGridEnv:
             (from flow.kernel in parent class)
                 example: kernel.vehicle.get_accel(veh_id)
                         returns the acceleration of the vehicle id
-        network: obj TODO: Remove
+
+        network: obj
             (from flow.network)
             object to collect network information
             example: kernel.network.rts
@@ -144,8 +144,7 @@ class PressureLightGridEnv:
 
         return observation
 
-    def compute_reward(self, rl_actions, step_counter, action_dict=None,
-                       rl_id=None, **kwargs):
+    def compute_reward(self, step_counter, rl_id):
         """Compute the reward for single traffic light as described in class definition.
            ie. compute the total sum for all pressure values for an edge pair
 
@@ -168,4 +167,3 @@ class PressureLightGridEnv:
 
         rew = -sum(self.edge_pressure_dict[rl_id])
         return rew
-

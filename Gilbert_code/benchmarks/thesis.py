@@ -33,7 +33,7 @@ class ThesisLightGridEnv:
         self.edge_pressure_dict = dict()
         self.waiting_times = dict()
         self.exp_type = None
-    
+
     def obs_shape_func(self):
         """Define the shape of the observation space for the Masters Thesis benchmark
 
@@ -54,7 +54,6 @@ class ThesisLightGridEnv:
                   network,
                   _get_relative_node,
                   direction,
-                  currently_yellow,
                   step_counter,
                   rl_id):
         """ Collect the observations for a single traffic light.
@@ -66,7 +65,8 @@ class ThesisLightGridEnv:
             (from flow.kernel in parent class)
                 example: kernel.vehicle.get_accel(veh_id)
                         returns the acceleration of the vehicle id
-        network: obj TODO: Remove
+
+        network: obj
             (from flow.network)
             object to collect network information
             example: kernel.network.rts
@@ -150,14 +150,14 @@ class ThesisLightGridEnv:
 
         i = 0
         for all_veh_ids in all_ids_incoming[rl_id]:
-
             local_waiting_time += kernel.kernel_api.vehicle.getWaitingTime(all_veh_ids)
             veh_positions[i] = kernel.vehicle.get_position(all_veh_ids)
-            relative_speeds[i] = kernel.kernel_api.vehicle.getSpeed(all_veh_ids) /\
+            relative_speeds[i] = kernel.kernel_api.vehicle.getSpeed(all_veh_ids) / \
                                  kernel.kernel_api.vehicle.getMaxSpeed(all_veh_ids)
             num_of_emergency_stops += kernel.kernel_api.vehicle.getAcceleration(all_veh_ids) < -4.5
             accelerations[i] = kernel.kernel_api.vehicle.getAcceleration(all_veh_ids)
-            delays += kernel.kernel_api.vehicle.getAllowedSpeed(all_veh_ids) - kernel.kernel_api.vehicle.getSpeed(all_veh_ids)
+            delays += kernel.kernel_api.vehicle.getAllowedSpeed(all_veh_ids) - kernel.kernel_api.vehicle.getSpeed(
+                all_veh_ids)
             i += 1
 
         light_states = kernel.traffic_light.get_state(rl_id)
@@ -185,11 +185,7 @@ class ThesisLightGridEnv:
 
         return observation
 
-    def compute_reward(self,
-                       rl_actions,
-                       step_counter,
-                       action_dict=None,
-                       rl_id=None, **kwargs):
+    def compute_reward(self, step_counter, rl_id):
         """Compute the reward for single traffic light as described in class definition.
 
            Note: Because we are minimizing the collected metrics described below,
@@ -216,6 +212,7 @@ class ThesisLightGridEnv:
 
         # track the time steps in order to know when 120 seconds
         # has been reached in order to stop updating memory pool for switching actions
+
         if step_counter == 1:
             changed = 0
         elif step_counter > 1:
@@ -233,10 +230,10 @@ class ThesisLightGridEnv:
             self.num_of_switch_actions[rl_id] = self.num_of_switch_actions[rl_id][1:] + [changed]
 
         rews = - (0.1 * sum(self.num_of_switch_actions[rl_id]) +
-                             0.2 * self.num_of_emergency_stops[rl_id] +
-                             0.3 * self.delays[rl_id] +
-                             0.3 * self.waiting_times[rl_id]/60
-                             )
+                  0.2 * self.num_of_emergency_stops[rl_id] +
+                  0.3 * self.delays[rl_id] +
+                  0.3 * self.waiting_times[rl_id] / 60
+                  )
 
         return rews
 
@@ -244,7 +241,7 @@ class ThesisLightGridEnv:
         """"compute the maximum number of vehicles that can be observed given the look ahead distance
         Returns: int
             number of vehicles that can be observed"""
-
+        cars_in_scope = 0
         if self.benchmark_params.look_ahead == 43:
             cars_in_scope = 24
 

@@ -102,12 +102,11 @@ class DeCentralizedGridEnv(CentralizedGridEnv, MultiTrafficLightGridPOEnv):
         # collect states/observations for for each rl_id
         for rl_id in self.k.traffic_light.get_ids():
             observation[rl_id] = self.benchmark.get_state(kernel=self.k,
-                                            network=self.network,
-                                            _get_relative_node=self._get_relative_node,
-                                            direction=self.direction,
-                                            currently_yellow=self.currently_yellow,
-                                            step_counter=self.step_counter,
-                                            rl_id=rl_id)
+                                                          network=self.network,
+                                                          _get_relative_node=self._get_relative_node,
+                                                          direction=self.direction,
+                                                          step_counter=self.step_counter,
+                                                          rl_id=rl_id)
 
         return observation
 
@@ -162,11 +161,8 @@ class DeCentralizedGridEnv(CentralizedGridEnv, MultiTrafficLightGridPOEnv):
 
         # compute rewards for each rl_id
         for rl_id, rl_action in rl_id_action_dict:
-            rews[rl_id] = self.benchmark.compute_reward(rl_action,
-                                          self.step_counter,
-                                          action_dict=self.action_dict,
-                                          rl_id=rl_id,
-                                          **kwargs)
+            rews[rl_id] = self.benchmark.compute_reward(self.step_counter, rl_id)
+
         return rews
 
     def _apply_rl_actions(self, rl_actions):
@@ -182,17 +178,17 @@ class DeCentralizedGridEnv(CentralizedGridEnv, MultiTrafficLightGridPOEnv):
             and the values correspond to either 0  or 1 (to not switch or switch respectively
         """
 
-        # if self.benchmark_params.sumo_actuated_baseline:
-        #     # return
-        #     if not os.path.isfile(self.benchmark_params.full_path):
-        #         return
-        #     else:
-        #         # read csv
-        #         df = pd.read_csv(self.benchmark_params.full_path, index_col=False)
-        #         n_iter = df.training_iteration.iat[-1]
-        #
-        #     if n_iter < self.benchmark_params.sumo_actuated_simulations:
-        #         return
+        # flag to activate sumo actuate baselines or not to
+        if self.benchmark_params.sumo_actuated_baseline:
+            if not os.path.isfile(self.benchmark_params.full_path):
+                return
+            else:
+                # read csv
+                df = pd.read_csv(self.benchmark_params.full_path, index_col=False)
+                n_iter = df.training_iteration.iat[-1]
+
+            if n_iter < self.benchmark_params.sumo_actuated_simulations:
+                return
 
         for rl_id, rl_action in rl_actions.items():
             i = int(rl_id.split("center")[ID_IDX])
@@ -228,4 +224,3 @@ class DeCentralizedGridEnv(CentralizedGridEnv, MultiTrafficLightGridPOEnv):
             contains shape and bounds of action space characterized
         """
         return Discrete(2)
-

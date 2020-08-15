@@ -137,7 +137,6 @@ def gen_demand(horizon,
                col_edges,
                row_edges,
                is_uniform=True):
-
     """Generate an inflow object of demands.
         format: object (see imported class: flow.core.params.InFlows)
                 veh_type='human',
@@ -218,14 +217,14 @@ def gen_demand(horizon,
     sorted_times_and_edges = sorted(zip(merged_times, merged_edges), key=lambda x: x[0])
 
     # add inflow
-    for time, edge in sorted_times_and_edges:
+    for time_, edge in sorted_times_and_edges:
         inflow.add(
             veh_type='human',
             edge=edge,
             probability=1,
             depart_lane='free',
             depart_speed=5,
-            begin=time,
+            begin=time_,
             number=1)
 
         # store histogram of demand
@@ -263,7 +262,7 @@ def get_truncated_normal(mean=0, sd=1800, low=0, upp=10):
 
     while True:
         rd = random.normalvariate(mean, sd)
-        if rd >= low and rd <= upp:
+        if low <= rd <= upp:
             return int(rd)
 
 
@@ -334,7 +333,7 @@ def log_travel_times(rl_actions,
     """
 
     save_plots = obj.save_plots
-    exp_being_run = obj.exp_being_run
+    exp_being_run = obj.grid_demand
     writer = obj.writer
     exp_name = obj.exp_name
 
@@ -372,15 +371,15 @@ def log_travel_times(rl_actions,
         plt.hist(info.travel_times, bins=150)
         plt.xlabel("Travel Times (sec)")
         plt.ylabel("Number of vehicles/frequency")
-        plt.title("1x3 {} Travel Time Distribution\n "
+        plt.title("{} Travel Time Distribution\n "
                   "{} Avg Travel Time \n"
                   " {} arrived cars,  last car at {}".format(exp_being_run,
                                                              int(avg),
                                                              len(info.travel_times),
                                                              max(info.arrival)))
 
-        plt.savefig("{}.png".format(exp_being_run))
-        plt.show()
+        plt.savefig("{}.png".format(obj.full_histogram_path))
+        # plt.show()
     writer.add_scalar(exp_name + '/travel_times ' + string, avg, n_iter)
     writer.add_scalar(exp_name + '/arrived cars ' + string, len(info.travel_times), n_iter)
 
@@ -390,7 +389,6 @@ def log_rewards(rew,
                 obj,
                 n_iter,
                 step_counter):
-
     """log current reward during simulation or average reward after simulation to tensorboard
 
     Parameters
@@ -477,9 +475,9 @@ def get_training_iter(full_path):
         # convert to csv
         file_to_convert.to_csv(full_path, index=False)
 
-        return n_iter+1
-    
-    
+        return n_iter + 1
+
+
 def color_vehicles(ids, color, kernel):
     """Color observed vehicles to visualize during simulation
 
@@ -694,7 +692,6 @@ def get_observed_ids(kernel, edge_, outgoing_edge, benchmark_params):
 
 
 def get_edge_params(rl_id, network, kernel, _get_relative_node):
-
     """Collect ids and names of edges"""
     node_to_edges = network.node_mapping
     rl_id_num = int(rl_id.split("center")[ID_IDX])

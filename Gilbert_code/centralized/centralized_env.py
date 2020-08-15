@@ -25,9 +25,8 @@ import itertools
 # index to split traffic lights string eg. "center0".split("center")[ID_IDX] = 0
 ID_IDX = 1
 
-modules = [thesis, presslight]
+modules = [presslight, thesis]
 
-# TODO: Explain in Readme
 ADDITIONAL_ENV_PARAMS = {
     # minimum switch time for each traffic light (in seconds)
     "switch_time": 2.0,
@@ -78,7 +77,7 @@ class CentralizedGridEnv(TrafficLightGridPOEnv):
             try:
                 self.benchmark = getattr(mod, env_params.additional_params["benchmark"])(self.benchmark_params)
                 break
-            except:
+            except AttributeError:
                 continue
 
         self.action_dict = dict()
@@ -101,14 +100,17 @@ class CentralizedGridEnv(TrafficLightGridPOEnv):
         -------
         reward : float
         """
-
-        # if no rl_action, SUMO default (either actuated or fixed) is executed,
-        # non reward required.
-        if rl_actions is None:
-            return {}
+        rl_ids = self.k.traffic_light.get_ids()
         rews = {}
 
-        rl_ids = self.k.traffic_light.get_ids()
+        # if no rl_action, SUMO default (either actuated or fixed) is executed. reward is computed.
+        if rl_actions is None:
+            for rl_id in rl_ids:
+                rews[rl_id] = self.benchmark.compute_reward(self.step_counter, rl_id)
+
+            # add all rewards for each traffic light
+            final_rew = sum(list(rews.values()))
+            return final_rew
 
         # collect required iterable for rl_actions and rl_ids
         if not self.action_dict:
@@ -120,11 +122,7 @@ class CentralizedGridEnv(TrafficLightGridPOEnv):
 
         # compute rewards for each rl_id
         for rl_id, rl_action in rl_id_action_dict:
-            rews[rl_id] = self.benchmark.compute_reward(rl_actions,
-                                          self.step_counter,
-                                          action_dict=self.action_dict,
-                                          rl_id=rl_id,
-                                          **kwargs)
+            rews[rl_id] = self.benchmark.compute_reward(self.step_counter, rl_id)
 
         # add all rewards for each traffic light
         final_rew = sum(list(rews.values()))
@@ -146,12 +144,11 @@ class CentralizedGridEnv(TrafficLightGridPOEnv):
         # collect states/observations for for each rl_id
         for rl_id in self.k.traffic_light.get_ids():
             observations[rl_id] = self.benchmark.get_state(kernel=self.k,
-                                            network=self.network,
-                                            _get_relative_node=self._get_relative_node,
-                                            direction=self.direction,
-                                            currently_yellow=self.currently_yellow,
-                                            step_counter=self.step_counter,
-                                            rl_id=rl_id)
+                                                           network=self.network,
+                                                           _get_relative_node=self._get_relative_node,
+                                                           direction=self.direction,
+                                                           step_counter=self.step_counter,
+                                                           rl_id=rl_id)
 
         # concatenate all states for each traffic light
         final_obs = np.concatenate(list((observations.values())))
@@ -258,22 +255,21 @@ class CentralizedGridEnv(TrafficLightGridPOEnv):
 
         """
         # flag to activate sumo actuate baselines or not to
-        # if self.benchmark_params.sumo_actuated_baseline:
-        #
-        #     # check file to track number of simulations completed during training.
-        #     if not os.path.isfile(self.benchmark_params.full_path):
-        #         return
-        #     else:
-        #         # read csv file if it exists
-        #         df = pd.read_csv(self.benchmark_params.full_path, index_col=False)
-        #         n_iter = df.training_iteration.iat[-1]
-        #
-        #     if n_iter < self.benchmark_params.sumo_actuated_simulations:
-        #         return
+        if self.benchmark_params.sumo_actuated_baseline:
+
+            # check file to track number of simulations completed during training.
+            if not os.path.isfile(self.benchmark_params.full_path):
+                return
+            else:
+                # read csv file if it exists
+                df = pd.read_csv(self.benchmark_params.full_path, index_col=False)
+                n_iter = df.training_iteration.iat[-1]
+
+            if n_iter < self.benchmark_params.sumo_actuated_simulations:
+                return
 
         rl_ids = np.arange(self.num_traffic_lights)
         actions = self.action_dict[rl_actions]
 
         for i, rl_action in zip(rl_ids, actions):
             execute_action(self, i, rl_action)
-

@@ -1,27 +1,21 @@
 """Grid example."""
 from flow.controllers import GridRouter
-from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams
+from flow.core.params import SumoParams, EnvParams
 from flow.core.params import TrafficLightParams
 from flow.core.params import InFlows, SumoCarFollowingParams, VehicleParams
 from flow.envs.multiagent.decentralized_env import DeCentralizedGridEnv
 from flow.envs.centralized_env import CentralizedGridEnv
-# from flow.envs.centralized_multi_agent_thesis import TrafficLightSingleMultiEnv
 from flow.networks import TrafficLightGridNetwork
 from flow.controllers import SimCarFollowingController, GridRouter
 from flow.core.traffic_light_utils import get_non_flow_params, get_flow_params
-from flow.envs.presslight import PressureLightGridEnv
-from flow.envs.thesis import ThesisLightGridEnv
-from flow.core.benchmark_params import BenchmarkParams
-
 
 # # # exp 1
-arterial = 600
-side_street = 180
+# arterial = 600
+# side_street = 180
 
 # # exp 2
 arterial = 1400
 side_street = 420
-
 
 WHITE = (255, 255, 255)
 CYAN = (0, 255, 255)
@@ -30,17 +24,16 @@ GREEN = (0, 255, 0)
 
 USE_INFLOWS = True
 
-
 v_enter = 5
 inner_length = 240
 long_length = 240
 short_length = 240
 n_rows = 1
 n_columns = 3
-num_cars_left = 0 #up
-num_cars_right = 0 #bottom
-num_cars_top = 0 #right
-num_cars_bot = 0#left
+num_cars_left = 0  # up
+num_cars_right = 0  # bottom
+num_cars_top = 0  # right
+num_cars_bot = 0  # left
 tot_cars = (num_cars_left + num_cars_right) * n_columns \
            + (num_cars_top + num_cars_bot) * n_rows
 
@@ -116,7 +109,6 @@ else:
         enter_speed=v_enter,
         add_net_params=additional_net_params)
 
-
 flow_params = dict(
     # name of the experiment
     exp_tag='test',
@@ -132,10 +124,10 @@ flow_params = dict(
 
     # sumo-related parameters (see flow.core.params.SumoParams)
     sim=SumoParams(restart_instance=True,
-        sim_step=1,
-        render=False,
-        emission_path='~/flow/data',
-    ),
+                   sim_step=1,
+                   render=False,
+                   emission_path='~/flow/data',
+                   ),
 
     # environment related parameters (see flow.core.params.EnvParams)
 

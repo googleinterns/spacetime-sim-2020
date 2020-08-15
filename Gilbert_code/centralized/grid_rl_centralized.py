@@ -7,7 +7,6 @@ from flow.networks import TrafficLightGridNetwork
 from flow.controllers import SimCarFollowingController, GridRouter
 from flow.core.traffic_light_utils import get_non_flow_params, get_flow_params
 
-
 N_ROLLOUTS = 1  # number of rollouts per training iteration
 N_CPUS = 1  # number of parallel workers
 """Grid example."""
@@ -20,7 +19,6 @@ N_CPUS = 1  # number of parallel workers
 arterial = 1400
 side_street = 420
 
-
 WHITE = (255, 255, 255)
 CYAN = (0, 255, 255)
 RED = (255, 0, 0)
@@ -28,17 +26,16 @@ GREEN = (0, 255, 0)
 
 USE_INFLOWS = True
 
-
 v_enter = 5
 inner_length = 240
 long_length = 240
 short_length = 240
 n_rows = 2
 n_columns = 2
-num_cars_left = 0 #up
-num_cars_right = 0 #bottom
-num_cars_top = 0 #right
-num_cars_bot = 0#left
+num_cars_left = 0  # up
+num_cars_right = 0  # bottom
+num_cars_top = 0  # right
+num_cars_bot = 0  # left
 tot_cars = (num_cars_left + num_cars_right) * n_columns \
            + (num_cars_top + num_cars_bot) * n_rows
 
@@ -114,10 +111,9 @@ else:
         enter_speed=v_enter,
         add_net_params=additional_net_params)
 
-
 flow_params = dict(
     # name of the experiment
-    exp_tag="TEST",
+    exp_tag="2x2_CENTRALIZED_2x2_THESIS_B",
 
     # name of the flow environment the experiment is running on
     env_name=CentralizedGridEnv,
@@ -130,10 +126,10 @@ flow_params = dict(
 
     # sumo-related parameters (see flow.core.params.SumoParams)
     sim=SumoParams(restart_instance=True,
-        sim_step=1,
-        render=False,
-        emission_path='~/flow/data',
-    ),
+                   sim_step=1,
+                   render=False,
+                   emission_path='~/flow/data',
+                   ),
 
     # environment related parameters (see flow.core.params.EnvParams)
 
