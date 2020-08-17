@@ -388,7 +388,8 @@ def log_rewards(rew,
                 action,
                 obj,
                 n_iter,
-                step_counter):
+                step_counter,
+                during_simulation=False):
     """log current reward during simulation or average reward after simulation to tensorboard
 
     Parameters
@@ -410,19 +411,30 @@ def log_rewards(rew,
     step_counter: int
         current simulation time step
 
+    during_simulation: bool
+        flag for whether to plot reward during iteration
+
     """
     writer = obj.writer
     exp_name = obj.exp_name
-    during_simulation = obj.log_rewards_during_iteration
     if action is None:
         string = "untrained"
     else:
         string = "trained"
 
     if during_simulation:
+        if len(rew) == 1:
+            plt.plot([step_counter - 1, step_counter], [0, rew[0]], color="r")
+        else:
+            plt.plot([step_counter-1, step_counter], rew[-2:], color="r")
+        plt.title("Reward Evolution during Simulation")
+        plt.xlabel("iteration")
+        plt.ylabel("reward")
+        plt.pause(0.0001)
+
         writer.add_scalar(
             exp_name + '/reward_per_simulation_step ' + string,
-            rew,
+            rew[-1],
             step_counter
         )
     else:
@@ -641,7 +653,7 @@ def find_intersection_dist(veh_id, kernel):
 
 
 def get_light_states(kernel, rl_id):
-    """Return current traffic light states as number in list:
+    """Map the traffic light state into an unique float number.
 
     Parameters:
     ----------
@@ -658,19 +670,20 @@ def get_light_states(kernel, rl_id):
     Returns:
     ---------
     light_states__ : list
-        Assigns value to each traffic light state either
+         list that contains only one float number, which uniquely represents the traffic light state.
             ie. GrGrGr = [1]"""
 
     light_states = kernel.traffic_light.get_state(rl_id)
 
     if light_states == "GrGr":
-        light_states__ = [1]
+        encoded_light_state = [1]
     elif light_states == "yryr":
-        light_states__ = [0.6]
+        encoded_light_state = [0.6]
     else:
-        light_states__ = [0.2]
+        # ryry or rGrG
+        encoded_light_state = [0.2]
 
-    return light_states__
+    return encoded_light_state
 
 
 def get_observed_ids(kernel, edge_, outgoing_edge, benchmark_params):

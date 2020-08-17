@@ -31,7 +31,7 @@ class BenchmarkParams:
         # saving flag, file location and name of histogram of results
         # plot and save histogram of travel time distribution at end of simulation
         self.save_plots = False
-        self.experiment_title = "TEST"
+        self.experiment_title = "1x1_DECENTRALIZED_Thesis"
         hist_dir = root_dir + '/ray_results/histograms'
         self.full_histogram_path = ensure_dir(hist_dir) + "/" + self.experiment_title
 
@@ -56,7 +56,8 @@ class BenchmarkParams:
         self.filename = "/iterations_{}_{}.csv".format(self.look_ahead, self.grid_demand)
         self.full_path = simulation_log_location + self.filename
 
-        # RGB colors for vehicles
+        # RGB colors for vehicles if coloring a vehicle. We color the observed incoming
+        # vehicles BLUE and the observed outgoing vehicles as RED at each intersection
         self.RED = (255, 0, 0)
         self.BLUE = (0, 0, 255)
         self.CYAN = (0, 255, 255)

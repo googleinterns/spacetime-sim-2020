@@ -30,8 +30,8 @@ v_enter = 5
 inner_length = 240
 long_length = 240
 short_length = 240
-n_rows = 2
-n_columns = 2
+n_rows = 1
+n_columns = 1
 num_cars_left = 0  # up
 num_cars_right = 0  # bottom
 num_cars_top = 0  # right
@@ -87,9 +87,9 @@ phases = [{
     "state": "ryry"
 }]
 tl_logic.add("center0", phases=phases, programID=1, tls_type="actuated")
-tl_logic.add("center1", phases=phases, programID=1, tls_type="actuated")
-tl_logic.add("center2", phases=phases, programID=1, tls_type="actuated")
-tl_logic.add("center3", phases=phases, programID=1, tls_type="actuated")
+# tl_logic.add("center1", phases=phases, programID=1, tls_type="actuated")
+# tl_logic.add("center2", phases=phases, programID=1, tls_type="actuated")
+# tl_logic.add("center3", phases=phases, programID=1, tls_type="actuated")
 
 additional_net_params = {
     "grid_array": grid_array,
@@ -113,7 +113,7 @@ else:
 
 flow_params = dict(
     # name of the experiment
-    exp_tag="2x2_CENTRALIZED_2x2_THESIS_B",
+    exp_tag="1x1_CENTRALIZED_Thesis",
 
     # name of the flow environment the experiment is running on
     env_name=CentralizedGridEnv,

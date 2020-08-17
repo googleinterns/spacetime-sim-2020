@@ -76,7 +76,12 @@ class DeCentralizedGridEnv(CentralizedGridEnv, MultiTrafficLightGridPOEnv):
         next_observation, reward, done, infos = MultiTrafficLightGridPOEnv.step(self, rl_actions)
 
         # log average reward and average travel times if simulation is over
-        self.rew_list += list(reward.values())
+        self.rew_list += [(sum(reward.values()))]
+
+        # log reward during simulation
+        if self.benchmark_params.log_rewards_during_iteration:
+            log_rewards(self.rew_list, rl_actions, self.benchmark_params, 0, self.step_counter, during_simulation=True)
+
         if done["__all__"]:
             # current training iteration
             iter_ = get_training_iter(self.benchmark_params.full_path)

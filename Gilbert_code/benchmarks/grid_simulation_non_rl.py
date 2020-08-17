@@ -28,8 +28,8 @@ v_enter = 5
 inner_length = 240
 long_length = 240
 short_length = 240
-n_rows = 1
-n_columns = 3
+n_rows = 2
+n_columns = 2
 num_cars_left = 0  # up
 num_cars_right = 0  # bottom
 num_cars_top = 0  # right
@@ -84,10 +84,10 @@ phases = [{
     "maxDur": "6",
     "state": "ryry"
 }]
-# tl_logic.add("center0", phases=phases, programID=1, tls_type="actuated")
-# tl_logic.add("center1", phases=phases, programID=1, tls_type="actuated")
-# tl_logic.add("center2", phases=phases, programID=1, tls_type="actuated")
-# tl_logic.add("center3", phases=phases, programID=1, tls_type="actuated")
+tl_logic.add("center0", phases=phases, programID=1, tls_type="actuated")
+tl_logic.add("center1", phases=phases, programID=1, tls_type="actuated")
+tl_logic.add("center2", phases=phases, programID=1, tls_type="actuated")
+tl_logic.add("center3", phases=phases, programID=1, tls_type="actuated")
 
 additional_net_params = {
     "grid_array": grid_array,
@@ -132,7 +132,7 @@ flow_params = dict(
     # environment related parameters (see flow.core.params.EnvParams)
 
     env=EnvParams(
-        horizon=1000,
+        horizon=5400,
         additional_params={
             "target_velocity": 11,
             "switch_time": 4,
@@ -141,7 +141,7 @@ flow_params = dict(
             "tl_type": "actuated",
             "num_local_edges": 4,
             "num_local_lights": 4,
-            "benchmark": "ThesisLightGridEnv",
+            "benchmark": "PressureLightGridEnv",
             "benchmark_params": "BenchmarkParams"
         }
         # additional_params=ADDITIONAL_ENV_PARAMS,

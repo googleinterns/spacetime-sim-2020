@@ -226,6 +226,11 @@ class CentralizedGridEnv(TrafficLightGridPOEnv):
 
         # log average reward and average travel times if simulation is over
         self.rew_list += [reward]
+
+        # log reward during simulation
+        if self.benchmark_params.log_rewards_during_iteration:
+            log_rewards(self.rew_list, rl_actions, self.benchmark_params, 0, self.step_counter, during_simulation=True)
+
         if done:
             # current training iteration
             iter_ = get_training_iter(self.benchmark_params.full_path)
