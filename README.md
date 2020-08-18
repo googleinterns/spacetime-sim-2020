@@ -36,13 +36,13 @@ The files located in the directory Gilbert_code correspond to the edited files f
     Contains parameters mainly logging and naming parameters for experiment. The class containined in this file is initialized in the the init statement in centrelized_env.py described below. \ Note: self.look_ahead and self.sumo_actuated_baseline are the only paramters that affect training.
 
 - #### grid_simulation_non_rl.py
-Source Location: edited from ~//flow/examples/exp_configs/non_rl\
-Sets simulation parameters for for a non-rl experiment. This environment spawns and renders a SUMO simulation. Traffic light control can either be SUMO inbuilt policies or pre-assigned phases timing plans. To run this file, in the ~/flow/examples directory, run:
+    Source Location: edited from ~//flow/examples/exp_configs/non_rl\
+    Sets simulation parameters for a non-rl experiment. This environment spawns and renders a SUMO simulation. Traffic light control can either be SUMO inbuilt policies or pre-assigned phases timing plans. To run this file, in the ~/flow/examples directory, run:
     ###### $ python simulate.py --exp_config grid_simulation_non_rl
 
 - #### presslight.py
-Source Location: edited from ~/flow/flow/envs\
-Contains observations and reward functions implementations of Presslight benchmark. If used, the class containined in this file is initialized in the the init statement in centrelized_env.py 
+    Source Location: edited from ~/flow/flow/envs\
+    Contains observations and reward functions implementations of Presslight benchmark. If used, the class containined in this file is initialized in the the init statement in centrelized_env.py 
 
 - #### thesis.py
 Source Location: edited from ~/flow/flow/envs\
@@ -51,52 +51,51 @@ Contains observations and reward functions implementations of thesis benchmark. 
 ### centralized:
 - ####  centralized_env.py 
     Source Location: edited from ~/flow/flow/envs\
-    Contains gym compatible environment class and methods for centralized. The class called has all the implemented methods that set the observation and action spaces, collects states, computes rewards, and logs rewards and travel time on tensorboard.
-- ####  grid1x3.py 
-    Source Location: edited from ~/flow/examples/exp_configs/non_rl\
-    Similar purpose to grid1x1 above but for 1x3 multi-agent scenario, to run this file, in the ~/flow/examples directory, run:
-    ###### $ python simulate.py grid1x3
-- ####  grid2x2.py 
-    Source Location: edited from ~/flow/examples/exp_configs/non_rl\
-    Similar purpose to grid1x1 above but for 2x2 multi-agent scenario, to run this file, in the ~/flow/examples directory, run:
-    ###### $ python simulate.py  grid2x2
-- ####  grid1x3_rl.py 
-    Source Location:  edited from ~/flow/examples/exp_configs/rl\
-    Similar purpose to grid1x1_rl above but for 1x3 multi-agent scenario, to run this file, in the ~/flow/examples directory, run:
-    ###### $ python train.py --exp_config  grid1x3_rl
-- ####  grid2x2_rl.py \
-    Similar purpose to grid1x1_rl above but for 2x2 multi-agent scenario, to run this file, in the ~/flow/examples directory, run:
-    ###### $ python train.py --exp_config grid2x2_rl
+    Contains gym compatible environment class and methods for centralized experiments. Centralized experiments concatenate all obersevations into a single array and trained that way. The class called has all the implemented methods that called the benchmark classes (eg in presslight.py, thesis.py) to set the observation and action spaces, collect states, compute rewards, and step functions.
+- ####  grid_rl_centralized.py 
+    Source Location: edited from ~/flow/examples/exp_configs/rl/multiagent\
+        Sets simulation parameters for a rl experiment. To train this file, in the ~/flow/examples directory, run:
+    ###### $ python train.py --exp_config  grid_rl_centralized
    
 ### decentralized:
-- #### grid1x1.py
-    Source Location: edited from ~/flow/examples/exp_configs/non_rl\
-    Sets parameters for single intersection non-rl experiment. Traffic light control can either be SUMO inbuilt policies or pre-assigned phases timing plans. To run this file, in the flow/examples directory, run:
-    ###### $ python simulate.py grid1x1
-
-- #### grid1x1_rl.py 
-    Source Location: edited from ~/flow/examples/exp_configs/rl\
-    Sets parameters for single intersection rl experiment. Traffic light control can either be SUMO inbuilt policies or pre-assigned phases timing plans. To run this file, in the ~/flow/examples directory, run:
-    ###### $ python train.py grid1x1_rl
+- ####  decentralized_env.py 
+    Source Location: edited from ~/flow/flow/envs\
+    Contains gym compatible environment class and methods for decentralized experiments. Decentralized experiments return obersevations, actions and rewards as dictionaries with agent ids as keys and trained that way. The class called has all the implemented methods that called the benchmark classes (eg in presslight.py, thesis.py) to set the observation and action spaces, collect states, compute rewards, and step functions.
+- ####  grid_rl_decentralized.py 
+    Source Location: edited from ~/flow/examples/exp_configs/rl/multiagent\
+        Sets simulation parameters for a rl experiment. To train this file, in the ~/flow/examples directory, run:
+    ###### $ python train.py --exp_config  grid_rl_decentralized
 
 ### single_agent directory:    
 - #### __init__.py 
     Source Location: edited from ~/flow/flow/envs\
-    Registers the created environments for FLOW to use
+    Registers the creates environments for FLOW to use. Contains Centralized environment.
     
 ### multi_agent directory:
 - ####  __init__.py Source Location: 
     Source Location: edited from ~/flow/flow/envs/multiagent\
-    Registers the created environments for FLOW to use
+    Registers the creates environments for FLOW to use. Contains Decentralized environment.
+    
 ### utils_and_source_code_edits directory:
-- ####  util.py 
-    Source Location: edited from ~/flow/flow/core\
-    This file contains code/methods that are shared amongst environments such as logging ot travel times.
+
+#### /simulation:
 - #### traci.py 
     Source Location: edited from ~/flow/flow/core/kernel/simulation\
-    This file contains code/methods that are shared amongst environments but are deeper into FLOW source code. The lines of interest are 119 to 122. These lines enable SUMO to output an xml containing trip infos that we collect travel times from.
+    This file contains code/methods that are shared amongst environments in FLOW source code. The lines of interest are 119 to 122. These lines enable SUMO to output an xml containing trip infos that we collect travel times from.
+
+
+#### /training:
+- #### train.py 
+    Source Location: edited from ~/flow/examples\
+    This file contains training hyperparameters (such as Neural Network configurations, learning rate, etc)  and spawns a training session for an experiment.
+
+#### /utils:
+- ####  traffic_light_utils.py 
+    Source Location: edited from ~/flow/flow/core\
+    This file contains helper functions that are imported and used in the benchmark classes and environment classes.
+
 
 ## Visualizing trained RL policies
 In order to visualize the policies, from the ~/flow/flow/visualize directory, run:
 ###### $ python visualizer_rllib.py --result_dir "result_dir here" --checkpoint_num "checkpoint_num here"
-where "checkpoint_num here" and "result_dir here" correspond to the checkpoint number we are trying to visualize and the directory containing the trained policy respectively.
+where "checkpoint_num here" and "result_dir here" correspond to the checkpoint number we are trying to visualize and the directory containing the trained policy respectively. 
