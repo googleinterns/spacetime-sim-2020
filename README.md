@@ -27,20 +27,20 @@ The files located in the directory Gilbert_code correspond to the edited files f
 This is a summarized guide on on to use this repo and run it's files (ensure your flow conda env is acticvated by running: ##### conda activate flow).
 
 In your root directory, run:
-###### git clone https://github.com/googleinterns/spacetime-sim-2020.git
-###### sh spacetime-sim-2020/copy_from_dir.sh
-###### cd flow
-###### python examples/train.py --exp_config grid_rl_centralized
+   ###### git clone https://github.com/googleinterns/spacetime-sim-2020.git
+   ###### sh spacetime-sim-2020/copy_from_dir.sh
+   ###### cd flow
+   ###### python examples/train.py --exp_config grid_rl_centralized
 
 To visualize tensorboard logging while training, run:
-###### tensorboard --logdir=~/ray_results/
+   ###### tensorboard --logdir=~/ray_results/
 
 When training is finished, to visualize policy, run:
-###### python flow/visualize/visualizer_rllib.py --result_dir "result_dir here" --checkpoint_num "checkpoint_num here"
+   ###### python flow/visualize/visualizer_rllib.py --result_dir "result_dir here" --checkpoint_num "checkpoint_num here"
 where "checkpoint_num here" and "result_dir here" correspond to the checkpoint number we are trying to visualize and the directory containing the trained policy respectively(found in ~/ray_results). 
 
 To run a none rl simulation (no training), run:
-###### python examples/simulate.py --exp_config grid_simulation_non_rl
+   ###### python examples/simulate.py --exp_config grid_simulation_non_rl
 
 
 #  Detailed Description of Files and Functionality + How to Run
