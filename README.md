@@ -45,10 +45,10 @@ The files located in the directory Gilbert_code correspond to the edited files f
     Contains observations and reward functions implementations of Presslight benchmark. If used, the class containined in this file is initialized in the the init statement in centrelized_env.py 
 
 - #### thesis.py
-Source Location: edited from ~/flow/flow/envs\
-Contains observations and reward functions implementations of thesis benchmark. If used, the class containined in this file is initialized in the the init statement in centrelized_env.py 
+    Source Location: edited from ~/flow/flow/envs\
+    Contains observations and reward functions implementations of thesis benchmark. If used, the class containined in this file is initialized in the the init statement in centrelized_env.py 
     
-### centralized:
+### centralized directory:
 - ####  centralized_env.py 
     Source Location: edited from ~/flow/flow/envs\
     Contains gym compatible environment class and methods for centralized experiments. Centralized experiments concatenate all obersevations into a single array and trained that way. The class called has all the implemented methods that called the benchmark classes (eg in presslight.py, thesis.py) to set the observation and action spaces, collect states, compute rewards, and step functions.
@@ -57,7 +57,7 @@ Contains observations and reward functions implementations of thesis benchmark. 
         Sets simulation parameters for a rl experiment. To train this file, in the ~/flow/examples directory, run:
     ###### $ python train.py --exp_config  grid_rl_centralized
    
-### decentralized:
+### decentralized directory:
 - ####  decentralized_env.py 
     Source Location: edited from ~/flow/flow/envs\
     Contains gym compatible environment class and methods for decentralized experiments. Decentralized experiments return obersevations, actions and rewards as dictionaries with agent ids as keys and trained that way. The class called has all the implemented methods that called the benchmark classes (eg in presslight.py, thesis.py) to set the observation and action spaces, collect states, compute rewards, and step functions.
