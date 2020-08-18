@@ -24,24 +24,31 @@ Ensure the "spacetime-sim-2020" repo is cloned in the home directory (user root 
 The files located in the directory Gilbert_code correspond to the edited files from the FLOW source code needed to implement our traffic light optimization methods and experiment. These files are located in different places within the FLOW source code.
 
 # How to use example:
-This is a summarized guide on on to use this repo and run it's files (ensure your flow conda env is acticvated by running: ##### conda activate flow).
+This is a summarized guide on on to use this repo and run it's files (ensure your flow conda env is acticvated by running:  ```shell conda activate flow```).
 
 In your root directory, run:
-   ###### git clone https://github.com/googleinterns/spacetime-sim-2020.git
-   ###### sh spacetime-sim-2020/copy_from_dir.sh
-   ###### cd flow
-   ###### python examples/train.py --exp_config grid_rl_centralized
+   ```shell
+        git clone https://github.com/googleinterns/spacetime-sim-2020.git
+        sh spacetime-sim-2020/copy_from_dir.sh
+        cd flow
+        python examples/train.py --exp_config grid_rl_centralized
+   ```
 
 To visualize tensorboard logging while training, run:
-   ###### tensorboard --logdir=~/ray_results/
+ ```shell
+    tensorboard --logdir=~/ray_results/
+ ```
 
 When training is finished, to visualize policy, run:
-   ###### python flow/visualize/visualizer_rllib.py --result_dir "result_dir here" --checkpoint_num "checkpoint_num here"
-where "checkpoint_num here" and "result_dir here" correspond to the checkpoint number we are trying to visualize and the directory containing the trained policy respectively(found in ~/ray_results). 
+```shell
+   python flow/visualize/visualizer_rllib.py --result_dir "result_dir here" --checkpoint_num "checkpoint_num here"
+ ```
+where ```shell checkpoint_num here``` and ```shell result_dir here ``` correspond to the checkpoint number we are trying to visualize and the directory containing the trained policy respectively(found in ```shell ~/ray_results ```). 
 
 To run a none rl simulation (no training), run:
-   ###### python examples/simulate.py --exp_config grid_simulation_non_rl
-
+```shell
+   python examples/simulate.py --exp_config grid_simulation_non_rl
+```
 
 #  Detailed Description of Files and Functionality + How to Run
 ## In the root directory:
@@ -59,7 +66,9 @@ To run a none rl simulation (no training), run:
 - #### grid_simulation_non_rl.py
     Source Location: edited from ~//flow/examples/exp_configs/non_rl\
     Sets simulation parameters for a non-rl experiment. This environment spawns and renders a SUMO simulation. Traffic light control can either be SUMO inbuilt policies or pre-assigned phases timing plans. To run this file, in the ~/flow directory, run:
-    ###### $ python examples/simulate.py --exp_config grid_simulation_non_rl
+    ```shell
+        python examples/simulate.py --exp_config grid_simulation_non_rl
+    ```
 
 - #### presslight.py
     Source Location: edited from ~/flow/flow/envs\
@@ -76,7 +85,10 @@ To run a none rl simulation (no training), run:
 - ####  grid_rl_centralized.py 
     Source Location: edited from ~/flow/examples/exp_configs/rl/multiagent\
         Sets simulation parameters for a rl experiment. To train this file, in the ~/flow directory, run:
-    ###### $ python examples/train.py --exp_config  grid_rl_centralized
+    
+    ```shell
+        python examples/train.py --exp_config  grid_rl_centralized
+    ```
    
 ### decentralized directory:
 - ####  decentralized_env.py 
@@ -85,7 +97,9 @@ To run a none rl simulation (no training), run:
 - ####  grid_rl_decentralized.py 
     Source Location: edited from ~/flow/examples/exp_configs/rl/multiagent\
         Sets simulation parameters for a rl experiment. To train this file, in the ~/flow directory, run:
-    ###### $ python examples/train.py --exp_config  grid_rl_decentralized
+    ```shell
+        python examples/train.py --exp_config  grid_rl_decentralized
+    ```
 
 ### single_agent directory:    
 - #### __init__.py 
@@ -118,6 +132,8 @@ To run a none rl simulation (no training), run:
 
 ## Visualizing trained RL policies
 In order to visualize the policies, from the ~/flowdirectory, run:
-###### $ python flow/visualize/visualizer_rllib.py --result_dir "result_dir here" --checkpoint_num "checkpoint_num here"
-where "checkpoint_num here" and "result_dir here" correspond to the checkpoint number we are trying to visualize and the directory containing the trained policy respectively.
+```shell 
+    python flow/visualize/visualizer_rllib.py --result_dir "result_dir here" --checkpoint_num "checkpoint_num here"
+```
+where ```shell checkpoint_num here``` and ```shell result_dir here``` correspond to the checkpoint number we are trying to visualize and the directory containing the trained policy respectively.
 
