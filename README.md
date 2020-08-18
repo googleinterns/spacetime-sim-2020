@@ -58,7 +58,7 @@ To run a none rl simulation (no training), run:
     This is scripts copies all the necessary files/code from Gilbert_code into into FLOW source code in order to run.
 
 ## In Gilbert_code directory:
-### [benchmarks directory](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/benchmarks):
+### 1. [benchmarks](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/benchmarks)
 - #### benchmark_params.py
     Source Location: edited from ~/flow/flow/core\
     Contains parameters mainly logging and naming parameters for experiment. The class containined in this file is initialized in the the init statement in centrelized_env.py described below. \ Note: self.look_ahead and self.sumo_actuated_baseline are the only paramters that affect training.
@@ -78,7 +78,7 @@ To run a none rl simulation (no training), run:
     Source Location: edited from ~/flow/flow/envs\
     Contains observations and reward functions implementations of thesis benchmark. If used, the class containined in this file is initialized in the the init statement in centrelized_env.py 
     
-### centralized directory:
+### 2. [centralized](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/centralized)
 - ####  centralized_env.py 
     Source Location: edited from ~/flow/flow/envs\
     Contains gym compatible environment class and methods for centralized experiments. Centralized experiments concatenate all obersevations into a single array and trained that way. The class called has all the implemented methods that called the benchmark classes (eg in presslight.py, thesis.py) to set the observation and action spaces, collect states, compute rewards, and step functions.
@@ -90,7 +90,7 @@ To run a none rl simulation (no training), run:
         python examples/train.py --exp_config  grid_rl_centralized
     ```
    
-### decentralized directory:
+### 3. [decentralized](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/decentralized)
 - ####  decentralized_env.py 
     Source Location: edited from ~/flow/flow/envs\
     Contains gym compatible environment class and methods for decentralized experiments. Decentralized experiments return obersevations, actions and rewards as dictionaries with agent ids as keys and trained that way. The class called has all the implemented methods that called the benchmark classes (eg in presslight.py, thesis.py) to set the observation and action spaces, collect states, compute rewards, and step functions.
@@ -101,31 +101,31 @@ To run a none rl simulation (no training), run:
         python examples/train.py --exp_config  grid_rl_decentralized
     ```
 
-### single_agent directory:    
+### 4. [single_agent](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/single_agent)    
 - #### __init__.py 
     Source Location: edited from ~/flow/flow/envs\
     Registers the creates environments for FLOW to use. Contains Centralized environment.
     
-### multi_agent directory:
+### 5. [multi_agent](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/multi_agent)
 - ####  __init__.py Source Location: 
     Source Location: edited from ~/flow/flow/envs/multiagent\
     Registers the creates environments for FLOW to use. Contains Decentralized environment.
     
-### utils_and_source_code_edits directory:
+### 6. [utils_and_source_code_edits](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits)
 
-#### /simulation:
+#### 6a. [simulation](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/simulation):
 - #### traci.py 
     Source Location: edited from ~/flow/flow/core/kernel/simulation\
     This file contains code/methods that are shared amongst environments in FLOW source code. The lines of interest are 119 to 122. These lines enable SUMO to output an xml containing trip infos that we collect travel times from.
     
     ##### Note (TODO) : this file file edition overwrites emission output path with trip-info output. (line ~121). Adding a seperate trip-info output path to flow would be difficult (without changed flow's source code) at this time.
 
-#### /training:
+#### 6b. [training](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/training):
 - #### train.py 
     Source Location: edited from ~/flow/examples\
     This file contains training hyperparameters (such as Neural Network configurations, learning rate, etc)  and spawns a training session for an experiment.
 
-#### /utils:
+#### 6c. [utils](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/utils):
 - ####  traffic_light_utils.py 
     Source Location: edited from ~/flow/flow/core\
     This file contains helper functions that are imported and used in the benchmark classes and environment classes.
