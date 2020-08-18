@@ -6,8 +6,8 @@ In this project, we study and implement traffic light optimization techniques us
 FLOW (https://flow-project.github.io/)  was developed by the Mobile Sensing Laboratory at the University of California, Berkeley with the goal of providing structured and scalable RL optimization tools in traffic management for autonomous vehicles and traffic lights. \
 SUMO (https://sumo.dlr.de/docs/index.html) is an open source, highly portable, microscopic and continuous traffic simulation package designed to handle large networks. 
 
-# Baselines Implemented
-In the project, we are implement two Traffic Light Optimization Baselines:
+# Benchmarks Implemented
+In the project, we are implement two Traffic Light Optimization Baenchmarks:
 - PressLight: Learning Max Pressure Control to Coordinate Traffic Signals in Arterial Network
     - https://dl.acm.org/doi/10.1145/3292500.3330949
     - https://github.com/wingsweihua/presslight
@@ -30,30 +30,28 @@ The files located in the directory Gilbert_code correspond to the edited files f
     This is scripts copies all the necessary files/code from Gilbert_code into into FLOW source code in order to run.
 
 ## In Gilbert_code directory:
-### Single_agent directory:
-- #### traffic_light_grid.py
-    Source Location: edited from ~/flow/flow/envs\
-    Contains gym environment for a 1x1 single intersection experiment. The class called MyGridEnv has all the implemented methods that set the obersavation and action spaces, collects states, computes rewards, and logs rewards and travel time on tensorboard.
-- #### __init__.py 
-    Source Location: edited from ~/flow/flow/envs\
-    Registers the created environments for FLOW to use
-- #### grid1x1.py
-    Source Location: edited from ~/flow/examples/exp_configs/non_rl\
-    Sets parameters for single intersection non-rl experiment. Traffic light control can either be SUMO inbuilt policies or pre-assigned phases timing plans. To run this file, in the flow/examples directory, run:
-    ###### $ python simulate.py grid1x1
+### benchmarks directory:
+- #### benchmark_params.py
+    Source Location: edited from ~/flow/flow/core\
+    Contains parameters mainly logging and naming parameters for experiment. The class containined in this file is initialized in the the init statement in centrelized_env.py described below. \ Note: self.look_ahead and self.sumo_actuated_baseline are the only paramters that affect training.
 
-- #### grid1x1_rl.py 
-    Source Location: edited from ~/flow/examples/exp_configs/rl\
-    Sets parameters for single intersection rl experiment. Traffic light control can either be SUMO inbuilt policies or pre-assigned phases timing plans. To run this file, in the ~/flow/examples directory, run:
-    ###### $ python train.py grid1x1_rl
+- #### grid_simulation_non_rl.py
+Source Location: edited from ~//flow/examples/exp_configs/non_rl\
+Sets simulation parameters for for a non-rl experiment. This environment spawns and renders a SUMO simulation. Traffic light control can either be SUMO inbuilt policies or pre-assigned phases timing plans. To run this file, in the ~/flow/examples directory, run:
+    ###### $ python simulate.py --exp_config grid_simulation_non_rl
+
+- #### presslight.py
+Source Location: edited from ~/flow/flow/envs\
+Contains observations and reward functions implementations of Presslight benchmark. If used, the class containined in this file is initialized in the the init statement in centrelized_env.py 
+
+- #### thesis.py
+Source Location: edited from ~/flow/flow/envs\
+Contains observations and reward functions implementations of thesis benchmark. If used, the class containined in this file is initialized in the the init statement in centrelized_env.py 
     
-### Multi_agent directory:
-- ####  traffic_light_grid.py 
-    Source Location: edited from ~/flow/flow/envs/multiagent\
-    Contains gym environment for a 1x3 and 2x2 intersection experiments. The class called MultiTrafficLightGridPOEnvPL has all the implemented methods that set the observation and action spaces, collects states, computes rewards, and logs rewards and travel time on tensorboard.
-- ####  __init__.py Source Location: 
-    Source Location: edited from ~/flow/flow/envs/multiagent\
-    Registers the created environments for FLOW to use
+### centralized:
+- ####  centralized_env.py 
+    Source Location: edited from ~/flow/flow/envs\
+    Contains gym compatible environment class and methods for centralized. The class called has all the implemented methods that set the observation and action spaces, collects states, computes rewards, and logs rewards and travel time on tensorboard.
 - ####  grid1x3.py 
     Source Location: edited from ~/flow/examples/exp_configs/non_rl\
     Similar purpose to grid1x1 above but for 1x3 multi-agent scenario, to run this file, in the ~/flow/examples directory, run:
@@ -69,7 +67,27 @@ The files located in the directory Gilbert_code correspond to the edited files f
 - ####  grid2x2_rl.py \
     Similar purpose to grid1x1_rl above but for 2x2 multi-agent scenario, to run this file, in the ~/flow/examples directory, run:
     ###### $ python train.py --exp_config grid2x2_rl
+   
+### decentralized:
+- #### grid1x1.py
+    Source Location: edited from ~/flow/examples/exp_configs/non_rl\
+    Sets parameters for single intersection non-rl experiment. Traffic light control can either be SUMO inbuilt policies or pre-assigned phases timing plans. To run this file, in the flow/examples directory, run:
+    ###### $ python simulate.py grid1x1
 
+- #### grid1x1_rl.py 
+    Source Location: edited from ~/flow/examples/exp_configs/rl\
+    Sets parameters for single intersection rl experiment. Traffic light control can either be SUMO inbuilt policies or pre-assigned phases timing plans. To run this file, in the ~/flow/examples directory, run:
+    ###### $ python train.py grid1x1_rl
+
+### single_agent directory:    
+- #### __init__.py 
+    Source Location: edited from ~/flow/flow/envs\
+    Registers the created environments for FLOW to use
+    
+### multi_agent directory:
+- ####  __init__.py Source Location: 
+    Source Location: edited from ~/flow/flow/envs/multiagent\
+    Registers the created environments for FLOW to use
 ### utils_and_source_code_edits directory:
 - ####  util.py 
     Source Location: edited from ~/flow/flow/core\
@@ -82,7 +100,3 @@ The files located in the directory Gilbert_code correspond to the edited files f
 In order to visualize the policies, from the ~/flow/flow/visualize directory, run:
 ###### $ python visualizer_rllib.py --result_dir "result_dir here" --checkpoint_num "checkpoint_num here"
 where "checkpoint_num here" and "result_dir here" correspond to the checkpoint number we are trying to visualize and the directory containing the trained policy respectively.
-
-
-## Policy Directory
-#### TODO: Add directory containing trained policies
