@@ -6,10 +6,21 @@ from flow.core.util import ensure_dir
 class BenchmarkParams:
     """
     Parameters required by environments:
-       mostly contains tensorboard setup and naming parameters,
+       contains tensorboard setup and naming parameters,
        flags for when to log info on tensorboard,
        saving simulation results,
        training flags such as actuated baselines
+
+        This following attributes are important for training:
+            self.sumo_actuated_baseline: bool
+                Activates/Deactivate sumo actuated light actions during training. If activated,
+                the SUMO actuated actions are performed for a pre-defiend training steps
+                and the observations are then collected to train the RL agent. In simpler terms,
+                we are helping the agent know what good actions look like before it begins to take it's own actions.
+                Note: Activating this may help the agent avoid local minimums.
+
+            self.look_ahead: int
+                Distance that the traffic lights can look ahead (and behind)
 
     """
 
@@ -31,7 +42,7 @@ class BenchmarkParams:
         # saving flag, file location and name of histogram of results
         # plot and save histogram of travel time distribution at end of simulation
         self.save_plots = False
-        self.experiment_title = "1x1_DECENTRALIZED_Thesis"
+        self.experiment_title = "1x1_Centralized_Pressure"
         hist_dir = root_dir + '/ray_results/histograms'
         self.full_histogram_path = ensure_dir(hist_dir) + "/" + self.experiment_title
 
