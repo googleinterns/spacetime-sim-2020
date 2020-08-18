@@ -58,7 +58,7 @@ To run a none rl simulation (no training), run:
     This is scripts copies all the necessary files/code from Gilbert_code into into FLOW source code in order to run.
 
 ## In Gilbert_code directory:
-### benchmarks directory:
+### [benchmarks directory](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/benchmarks):
 - #### benchmark_params.py
     Source Location: edited from ~/flow/flow/core\
     Contains parameters mainly logging and naming parameters for experiment. The class containined in this file is initialized in the the init statement in centrelized_env.py described below. \ Note: self.look_ahead and self.sumo_actuated_baseline are the only paramters that affect training.
