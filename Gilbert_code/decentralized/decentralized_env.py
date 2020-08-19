@@ -57,8 +57,8 @@ class DeCentralizedGridEnv(CentralizedGridEnv, MultiTrafficLightGridPOEnv):
 
         Parameters
         ----------
-        rl_actions : array_like
-            an list of actions provided by the rl algorithm
+        rl_actions : dict
+            an dict of rl_ids as keys and actions as values provided by the rl algorithm
 
         Returns
         -------
@@ -76,7 +76,7 @@ class DeCentralizedGridEnv(CentralizedGridEnv, MultiTrafficLightGridPOEnv):
         next_observation, reward, done, infos = MultiTrafficLightGridPOEnv.step(self, rl_actions)
 
         # log average reward and average travel times if simulation is over
-        self.rew_list += [(sum(reward.values()))]
+        self.rew_list.append(sum(reward.values()))
 
         # log reward during simulation
         if self.benchmark_params.log_rewards_during_iteration:
@@ -198,6 +198,7 @@ class DeCentralizedGridEnv(CentralizedGridEnv, MultiTrafficLightGridPOEnv):
         for rl_id, rl_action in rl_actions.items():
             i = int(rl_id.split("center")[ID_IDX])
             execute_action(self, i, rl_action)
+
 
     @property
     def observation_space(self):

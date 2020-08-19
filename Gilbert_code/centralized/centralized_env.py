@@ -27,21 +27,41 @@ ID_IDX = 1
 
 modules = [presslight, thesis]
 
-ADDITIONAL_ENV_PARAMS = {
+# These sample parameters can be imported in the simulation config files as
+# from flow.envs.centralized_env import PRESSURE_SAMPLE_PARAMS, THESIS_SAMPLE_PARAMS
+
+PRESSURE_SAMPLE_PARAMS = {
     # minimum switch time for each traffic light (in seconds)
     "switch_time": 2.0,
     # whether the traffic lights should be actuated by sumo or RL
     # options are "controlled" and "actuated"
-    "tl_type": "controlled",
+    "tl_type": "actuated",
     # determines whether the action space is meant to be discrete or continuous
-    "discrete": False,
+    "discrete": True,
+    "target_velocity": 11,
+    "yellow_phase_duration": 4,
+    "num_observed": 2,
+    "num_local_edges": 4,
+    "num_local_lights": 4,
+    "benchmark": "PressureLightGridEnv",  # This should be the string name of the benchmark class
+    "benchmark_params": "BenchmarkParams"
 }
 
-ADDITIONAL_PO_ENV_PARAMS = {
-    # num of vehicles the agent can observe on each incoming edge
+THESIS_SAMPLE_PARAMS = {
+    # minimum switch time for each traffic light (in seconds)
+    "switch_time": 2.0,
+    # whether the traffic lights should be actuated by sumo or RL
+    # options are "controlled" and "actuated"
+    "tl_type": "actuated",
+    # determines whether the action space is meant to be discrete or continuous
+    "discrete": True,
+    "target_velocity": 11,
+    "yellow_phase_duration": 4,
     "num_observed": 2,
-    # velocity to use in reward functions
-    "target_velocity": 30,
+    "num_local_edges": 4,
+    "num_local_lights": 4,
+    "benchmark": "ThesisLightGridEnv",  # This should be the string name of the benchmark class
+    "benchmark_params": "BenchmarkParams"
 }
 
 
@@ -82,6 +102,7 @@ class CentralizedGridEnv(TrafficLightGridPOEnv):
 
         self.action_dict = dict()
         self.rew_list = []
+        self.yellow_phase_duration = env_params.additional_params["yellow_phase_duration"]
 
     def compute_reward(self, rl_actions, **kwargs):
 
@@ -207,7 +228,8 @@ class CentralizedGridEnv(TrafficLightGridPOEnv):
         Parameters
         ----------
         rl_actions : array_like
-            an list of actions provided by the rl algorithm
+            action provided by the rl algorithm
+            Note: self.action_dict =  {rl_actions: (action_for each_traffic_light)}
 
         Returns
         -------
@@ -225,7 +247,7 @@ class CentralizedGridEnv(TrafficLightGridPOEnv):
         next_observation, reward, done, infos = super().step(rl_actions)
 
         # log average reward and average travel times if simulation is over
-        self.rew_list += [reward]
+        self.rew_list.append(reward)
 
         # log reward during simulation
         if self.benchmark_params.log_rewards_during_iteration:
@@ -251,6 +273,7 @@ class CentralizedGridEnv(TrafficLightGridPOEnv):
         ----------
         rl_actions : int
             actions provided by the RL algorithm
+            Note: self.action_dict =  {rl_actions: (action_for each_traffic_light)}
             ie. for single light: 0, 1
                                  switch or not to switch traffic light respectively
                                  {0: (0), 1:(1)}

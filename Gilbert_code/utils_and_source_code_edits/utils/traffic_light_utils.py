@@ -819,7 +819,7 @@ def execute_action(self, i, rl_action):
         self.last_change[i] += self.sim_step
         # Check if our timer has exceeded the yellow phase, meaning it
         # should switch to red
-        if self.last_change[i] >= self.min_switch_time:  # TODO: rename yellow phase duration
+        if self.last_change[i] >= self.yellow_phase_duration:
             if self.direction[i] == 0:
                 self.k.traffic_light.set_state(
                     node_id='center{}'.format(i), state="GrGr")

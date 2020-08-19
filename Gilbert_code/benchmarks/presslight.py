@@ -127,7 +127,7 @@ class PressureLightGridEnv:
                                                                        self.benchmark_params)
 
             # get edge pressures of those edges
-            edge_pressure_state += [len(observed_ids_ahead) - len(observed_ids_behind)]
+            edge_pressure_state.append(len(observed_ids_ahead) - len(observed_ids_behind))
 
         # for each incoming edge, store the pressure terms to be used in compute reward
         self.edge_pressure_dict[rl_id] = edge_pressure_state
