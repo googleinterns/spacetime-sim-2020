@@ -1,19 +1,16 @@
-from flow.controllers import GridRouter
-from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams
-from flow.core.params import VehicleParams
-from flow.core.params import TrafficLightParams
-from flow.core.params import SumoCarFollowingParams
-from flow.core.params import InFlows
-from flow.envs import TrafficLightGridPOEnv, MyGridEnv
-from flow.networks import TrafficLightGridNetwork
 from flow.core.experiment import Experiment
 import numpy as np
 import os
-from datetime import datetime
-from flow.core.util import trip_info_emission_to_csv
 import pandas as pd
 import time
 import matplotlib.pyplot as plt
+from flow.core.params import SumoParams, EnvParams
+from flow.core.params import TrafficLightParams
+from flow.core.params import SumoCarFollowingParams, VehicleParams
+from flow.envs.centralized_env import CentralizedGridEnv
+from flow.networks import TrafficLightGridNetwork
+from flow.controllers import SimCarFollowingController, GridRouter
+from flow.core.traffic_light_utils import get_non_flow_params, get_flow_params, trip_info_emission_to_csv
 
 
 def fix_timing(total_cycle_time=None, e_w_green_time=None):
@@ -52,28 +49,27 @@ def create_flow_params(total_cycle_time, e_w_green_time):
     flow_params:
 
     """
-    """Grid example."""
 
+    # Set up the number of vehicles to be inserted in the NS and EW directions
+    arterial = 1400
+    side_street = 420
+
+    # use inflows specified above
     USE_INFLOWS = True
-    ADDITIONAL_ENV_PARAMS = {
-        'target_velocity': 11,
-        'switch_time': 3.0,  # min switch time
-        'num_observed': 1,  # num of cars we can observe
-        'discrete': False,
-        'tl_type': 'controlled'  # actuated by SUMO
-    }
-    v_enter = 11
+
+    # set up road network parameters
+    v_enter = 5
     inner_length = 240
     long_length = 240
     short_length = 240
-    n_rows = 2
-    n_columns = 2
-    num_cars_left = 1  # up
+    n_rows = 1
+    n_columns = 1
+
+    # number of vehicles inflow (these inflows are used if USE_INFLOWS = False)
+    num_cars_left = 0  # up
     num_cars_right = 0  # bottom
     num_cars_top = 0  # right
     num_cars_bot = 0  # left
-    tot_cars = (num_cars_left + num_cars_right) * n_columns \
-               + (num_cars_top + num_cars_bot) * n_rows
 
     grid_array = {
         "short_length": short_length,
@@ -87,117 +83,20 @@ def create_flow_params(total_cycle_time, e_w_green_time):
         "cars_bot": num_cars_bot
     }
 
-    def gen_edges(col_num, row_num):
-        """Generate the names of the outer edges in the grid network.
-
-        Parameters
-        ----------
-        col_num : int
-            number of columns in the grid
-        row_num : int
-            number of rows in the grid
-
-        Returns
-        -------
-        list of str
-            names of all the outer edges
-        """
-        edges = []
-
-        # build the left and then the right edges
-        for i in range(col_num):
-            edges += ['left' + str(row_num) + '_' + str(i)]
-            edges += ['right' + '0' + '_' + str(i)]
-
-        # build the bottom and then top edges
-        for i in range(row_num):
-            edges += ['bot' + str(i) + '_' + '0']
-            edges += ['top' + str(i) + '_' + str(col_num)]
-
-        return edges
-
-    def get_flow_params(col_num, row_num, additional_net_params):
-        """Define the network and initial params in the presence of inflows.
-
-        Parameters
-        ----------
-        col_num : int
-            number of columns in the grid
-        row_num : int
-            number of rows in the grid
-        additional_net_params : dict
-            network-specific parameters that are unique to the grid
-
-        Returns
-        -------
-        flow.core.params.InitialConfig
-            parameters specifying the initial configuration of vehicles in the
-            network
-        flow.core.params.NetParams
-            network-specific parameters used to generate the network
-        """
-        initial = InitialConfig(
-            spacing='custom', lanes_distribution=float('inf'), shuffle=True)
-
-        inflow = InFlows()
-        outer_edges = gen_edges(col_num, row_num)
-        for i in range(len(outer_edges)):
-            if outer_edges[i].__contains__("top") or outer_edges[i].__contains__("bot"):
-                vph = arterial
-            else:
-                vph = side_street
-            inflow.add(
-                veh_type='human',
-                edge=outer_edges[i],
-                vehs_per_hour=vph,
-                depart_lane='free',
-                depart_speed=5)  # was 20
-
-        net = NetParams(
-            inflows=inflow,
-            additional_params=additional_net_params)
-
-        return initial, net
-
-    def get_non_flow_params(enter_speed, add_net_params):
-        """Define the network and initial params in the absence of inflows.
-
-        Note that when a vehicle leaves a network in this case, it is immediately
-        returns to the start of the row/column it was traversing, and in the same
-        direction as it was before.
-
-        Parameters
-        ----------
-        enter_speed : float
-            initial speed of vehicles as they enter the network.
-        add_net_params: dict
-            additional network-specific parameters (unique to the grid)
-
-        Returns
-        -------
-        flow.core.params.InitialConfig
-            parameters specifying the initial configuration of vehicles in the
-            network
-        flow.core.params.NetParams
-            network-specific parameters used to generate the network
-        """
-        additional_init_params = {'enter_speed': enter_speed}
-        initial = InitialConfig(
-            spacing='custom', additional_params=additional_init_params)
-        net = NetParams(additional_params=add_net_params)
-
-        return initial, net
-
+    # specify vehicle parameters to be added
     vehicles = VehicleParams()
     vehicles.add(
         veh_id="human",
-        routing_controller=(GridRouter, {}),
+        acceleration_controller=(SimCarFollowingController, {}),
         car_following_params=SumoCarFollowingParams(
             min_gap=2.5,
             decel=7.5,  # avoid collisions at emergency stops
+            speed_mode="right_of_way",
         ),
-        num_vehicles=tot_cars)
+        routing_controller=(GridRouter, {}),
+        num_vehicles=0)
 
+    # Set up traffic light parameters
     tl_logic = TrafficLightParams(baseline=False)
     phases = [{
         "duration": str(e_w_green_time),
@@ -212,11 +111,15 @@ def create_flow_params(total_cycle_time, e_w_green_time):
         "duration": "4",
         "state": "ryry"
     }]
-    tl_logic.add("center0", phases=phases, programID=1)
-    tl_logic.add("center1", phases=phases, programID=1)
-    tl_logic.add("center2", phases=phases, programID=1)
-    tl_logic.add("center3", phases=phases, programID=1)
 
+    # add the specified phases and traffic lights: These should match the num_rows + num_col
+    # NOTE: Iif tls_type="actuated", SUMO activates the actuated phases timing plan
+    tl_logic.add("center0", phases=phases, programID=1)
+    # tl_logic.add("center1", phases=phases, programID=1)
+    # tl_logic.add("center2", phases=phases, programID=1)
+    # tl_logic.add("center3", phases=phases, programID=1)
+
+    # specify network paramters
     additional_net_params = {
         "grid_array": grid_array,
         "speed_limit": 11,
@@ -224,22 +127,27 @@ def create_flow_params(total_cycle_time, e_w_green_time):
         "vertical_lanes": 1
     }
 
+    # add inflows specified above
     if USE_INFLOWS:
         initial_config, net_params = get_flow_params(
             col_num=n_columns,
             row_num=n_rows,
+            horizon=3600,
+            num_veh_per_row=arterial,
+            num_veh_per_column=side_street,
             additional_net_params=additional_net_params)
     else:
         initial_config, net_params = get_non_flow_params(
             enter_speed=v_enter,
             add_net_params=additional_net_params)
 
+    # set up flow_params
     flow_params = dict(
         # name of the experiment
-        exp_tag='grid-trail',
+        exp_tag='test',
 
         # name of the flow environment the experiment is running on
-        env_name=MyGridEnv,
+        env_name=CentralizedGridEnv,
 
         # name of the network class the experiment is running on
         network=TrafficLightGridNetwork,
@@ -248,17 +156,28 @@ def create_flow_params(total_cycle_time, e_w_green_time):
         simulator='traci',
 
         # sumo-related parameters (see flow.core.params.SumoParams)
-        sim=SumoParams(
-            sim_step=1,
-            render=False,
-            emission_path='~/flow/data',
-            restart_instance=True,
-        ),
+        sim=SumoParams(restart_instance=True,
+                       sim_step=1,
+                       render=False,
+                       emission_path='~/flow/data',
+                       ),
 
         # environment related parameters (see flow.core.params.EnvParams)
+
         env=EnvParams(
-            horizon=3600,
-            additional_params=ADDITIONAL_ENV_PARAMS.copy(),
+            horizon=5400,
+            additional_params={
+                "target_velocity": 11,
+                "switch_time": 4,
+                "yellow_phase_duration": 4,
+                "num_observed": 2,
+                "discrete": True,
+                "tl_type": "actuated",
+                "num_local_edges": 4,
+                "num_local_lights": 4,
+                "benchmark": "PressureLightGridEnv",  # This should be the string name of the benchmark class
+                "benchmark_params": "BenchmarkParams"
+            }
         ),
 
         # network-related parameters (see flow.core.params.NetParams and the
@@ -277,6 +196,7 @@ def create_flow_params(total_cycle_time, e_w_green_time):
         # flow.core.params.TrafficLightParams)
         tls=tl_logic,
     )
+
     return flow_params
 
 
@@ -321,7 +241,7 @@ if __name__ == "__main__":
 
     # create dict, add sumo and store here
     for cycle_length in [120]:
-        for demand in ["L", "H"]:
+        for demand in ["H"]:
             # between 4 and 116 secs
 
             # cycle length
@@ -329,16 +249,16 @@ if __name__ == "__main__":
             # cycle_length = 108
 
             # set green time
-            green_times = np.arange(4, cycle_length-12)
-            # green_times = np.arange(34, 35)
+            # green_times = np.arange(4, cycle_length-12)
+            green_times = np.arange(34, 35)
             # demand = "H"
             # set sumo
-            if demand == "L":
-                sumo_travel_time = 56.6
-                sumo_pressure = -10.2
-                # #  exp 1
-                arterial = 600
-                side_street = 180
+            # if demand == "L":
+                # sumo_travel_time = 56.6
+                # sumo_pressure = -10.2
+                # # #  exp 1
+                # arterial = 600
+                # side_street = 180
 
             if demand == "H":
                 sumo_travel_time = 97.74
@@ -362,12 +282,12 @@ if __name__ == "__main__":
             # display hist and save hist
             plt.ylabel("Average travel time (sec)")
             plt.title("Fixed vs Actuated Travel times: SUMO \n "
-                      "2x2 Grid {} Cycle length\n Demand = {}".format(cycle_length, demand))
+                      "1x1 Grid {} Cycle length".format(cycle_length))
             plt.xticks(list(travel_info.keys())[::10])
-            plt.savefig("baselines_{}_{}2x2.png".format(cycle_length, demand))
+            plt.savefig("baselines_{}_{}1x1.png".format(cycle_length, demand))
             # plt.show()
             plt.clf()
 
             # save to csv
             info = pd.DataFrame(travel_info, index=[0])
-            info.to_csv("baselines_{}_{}2x2.csv".format(cycle_length, demand), index=False)
+            info.to_csv("baselines_{}_{}1x1.csv".format(cycle_length, demand), index=False)
