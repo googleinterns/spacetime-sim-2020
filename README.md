@@ -81,7 +81,7 @@ To run a non-rl simulation (no training), run:
    - #### [training](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/training)
    - #### [utils](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/utils)
 
-## Important Info about Visualizing trained RL policies:
+## Important Info about visualizing trained RL policies:
 After training, if ``` "tls=tl_logic" ``` was passed into into ``` flow_params ``` in the configuration files at teh start of the training session, ensure that this command is renamed or removed in ``` ~/ray_results/../../params.json``` of the trained policy. \
    - This will ensure any SUMO default actions are NOT performed. (ie. all actions being visualized are purely from the trained agent).
 
