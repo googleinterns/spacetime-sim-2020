@@ -64,13 +64,11 @@ To run a non-rl simulation (no training), run:
 ### 4. [single_agent](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/single_agent)    
 ### 5. [multi_agent](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/multi_agent)
 ### 6. [utils_and_source_code_edits](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits)
-- #### [simulation](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/simulation)
-- #### [training](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/training)
-- #### [utils](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/utils)
+   - #### [simulation](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/simulation)
+   - #### [training](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/training)
+   - #### [utils](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/utils)
 
 ## Important Info about Visualizing trained RL policies:
 After training, if ``` "tls=tl_logic" ``` was passed into into ``` flow_params ``` when training, ensure that this command is renamed or removed in ``` ~/ray_results/../../params.json``` of the trained policy. \
-    - This will ensure any SUMO default actions are NOT performed. (ie. all actions being visualized are purely from the trained agent).
-
-In order to visualize the policies, 
+   - This will ensure any SUMO default actions are NOT performed. (ie. all actions being visualized are purely from the trained agent).
 
