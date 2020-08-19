@@ -25,7 +25,14 @@ After installing FLOW, ensure the "spacetime-sim-2020" repo is cloned in the hom
    ```
 
 # Files in this Repo
-The files located in the directory Gilbert_code correspond to the edited files from the FLOW source code needed to implement our traffic light optimization methods and experiment. These files are located in different places within the FLOW source code.
+The files located in the directory Gilbert_code correspond to the files that interact with the FLOW's source code in order implement our traffic light optimization methods and experiment. These files are copied to different directories within the FLOW codebase in order to run smoothly.
+
+Note: The FLOW's source code files that were explicitly edited and are included in this repo and are namely; 
+ - __init__.py located in [single_agent](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/single_agent)
+ - __init__.py located in [multi_agent](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/multi_agent)
+ - traci.py located in [simulation](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/simulation)
+ - train.py located in [training](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/training)
+These files overwrite FLOW's source code in order to ensure our experiments are able to run.
 
 # How to use example:
 This is a summarized guide on on to use this repo and run it's files (ensure your flow conda env is acticvated by running:  ```shell conda activate flow```).
