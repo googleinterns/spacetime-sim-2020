@@ -40,8 +40,9 @@ This is a summarized guide on on to use this repo and run it's files (ensure you
 
 In your root directory, run:
    ```shell
+        cd spacetime-sim-2020
         sh spacetime-sim-2020/copy_from_dir.sh
-        cd flow
+        cd ../flow
         python examples/train.py --exp_config grid_rl_centralized
    ```
 
