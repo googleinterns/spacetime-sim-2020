@@ -35,20 +35,20 @@ In your root directory, run:
    ```
 
 To visualize tensorboard logging while training, run:
- ```shell
-    tensorboard --logdir=~/ray_results/
- ```
+     ```shell
+        tensorboard --logdir=~/ray_results/
+     ```
 
 When training is finished, to visualize policy, run:
-```shell
-   python flow/visualize/visualizer_rllib.py --result_dir "result_dir here" --checkpoint_num "checkpoint_num here"
- ```
+    ```shell
+       python flow/visualize/visualizer_rllib.py --result_dir "result_dir here" --checkpoint_num "checkpoint_num here"
+     ```
 where ```shell checkpoint_num here``` and ```shell result_dir here ``` correspond to the checkpoint number we are trying to visualize and the directory containing the trained policy respectively(found in ```shell ~/ray_results ```). 
 
-To run a none rl simulation (no training), run:
-```shell
-   python examples/simulate.py --exp_config grid_simulation_non_rl
-```
+To run a non-rl simulation (no training), run:
+    ```shell
+       python examples/simulate.py --exp_config grid_simulation_non_rl
+    ```
 
 #  Detailed Description of Files and Functionality + How to Run
 ## In the root directory:
@@ -59,81 +59,18 @@ To run a none rl simulation (no training), run:
 
 ## In Gilbert_code directory:
 ### 1. [benchmarks](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/benchmarks)
-- #### benchmark_params.py
-    Source Location: edited from ~/flow/flow/core\
-    Contains parameters mainly logging and naming parameters for experiment. The class containined in this file is initialized in the the init statement in centrelized_env.py described below. \ Note: self.look_ahead and self.sumo_actuated_baseline are the only paramters that affect training.
-
-- #### grid_simulation_non_rl.py
-    Source Location: edited from ~//flow/examples/exp_configs/non_rl\
-    Sets simulation parameters for a non-rl experiment. This environment spawns and renders a SUMO simulation. Traffic light control can either be SUMO inbuilt policies or pre-assigned phases timing plans. To run this file, in the ~/flow directory, run:
-    ```shell
-        python examples/simulate.py --exp_config grid_simulation_non_rl
-    ```
-
-- #### presslight.py
-    Source Location: edited from ~/flow/flow/envs\
-    Contains observations and reward functions implementations of Presslight benchmark. If used, the class containined in this file is initialized in the the init statement in centrelized_env.py 
-
-- #### thesis.py
-    Source Location: edited from ~/flow/flow/envs\
-    Contains observations and reward functions implementations of thesis benchmark. If used, the class containined in this file is initialized in the the init statement in centrelized_env.py 
-    
 ### 2. [centralized](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/centralized)
-- ####  centralized_env.py 
-    Source Location: edited from ~/flow/flow/envs\
-    Contains gym compatible environment class and methods for centralized experiments. Centralized experiments concatenate all obersevations into a single array and trained that way. The class called has all the implemented methods that called the benchmark classes (eg in presslight.py, thesis.py) to set the observation and action spaces, collect states, compute rewards, and step functions.
-- ####  grid_rl_centralized.py 
-    Source Location: edited from ~/flow/examples/exp_configs/rl/multiagent\
-        Sets simulation parameters for a rl experiment. To train this file, in the ~/flow directory, run:
-    
-    ```shell
-        python examples/train.py --exp_config  grid_rl_centralized
-    ```
-   
 ### 3. [decentralized](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/decentralized)
-- ####  decentralized_env.py 
-    Source Location: edited from ~/flow/flow/envs\
-    Contains gym compatible environment class and methods for decentralized experiments. Decentralized experiments return obersevations, actions and rewards as dictionaries with agent ids as keys and trained that way. The class called has all the implemented methods that called the benchmark classes (eg in presslight.py, thesis.py) to set the observation and action spaces, collect states, compute rewards, and step functions.
-- ####  grid_rl_decentralized.py 
-    Source Location: edited from ~/flow/examples/exp_configs/rl/multiagent\
-        Sets simulation parameters for a rl experiment. To train this file, in the ~/flow directory, run:
-    ```shell
-        python examples/train.py --exp_config  grid_rl_decentralized
-    ```
-
 ### 4. [single_agent](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/single_agent)    
-- #### __init__.py 
-    Source Location: edited from ~/flow/flow/envs\
-    Registers the creates environments for FLOW to use. Contains Centralized environment.
-    
 ### 5. [multi_agent](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/multi_agent)
-- ####  __init__.py Source Location: 
-    Source Location: edited from ~/flow/flow/envs/multiagent\
-    Registers the creates environments for FLOW to use. Contains Decentralized environment.
-    
 ### 6. [utils_and_source_code_edits](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits)
+- #### [simulation](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/simulation)
+- #### [training](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/training)
+- #### [utils](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/utils)
 
-- #### [simulation](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/simulation):
-- #### traci.py 
-    Source Location: edited from ~/flow/flow/core/kernel/simulation\
-    This file contains code/methods that are shared amongst environments in FLOW source code. The lines of interest are 119 to 122. These lines enable SUMO to output an xml containing trip infos that we collect travel times from.
-    
-    ##### Note (TODO) : this file file edition overwrites emission output path with trip-info output. (line ~121). Adding a seperate trip-info output path to flow would be difficult (without changed flow's source code) at this time.
+## Important Info about Visualizing trained RL policies:
+After training, if ```shell "tls=tl_logic" ``` was passed into into ```shell flow_params ``` when training, ensure that this command is renamed or removed in ```shell ~/ray_results/../../params.json``` of the trained policy.:
+    - This will ensure any SUMO default actions are NOT performed. (ie. all actions being visualized are purely from the trained agent).
 
-- #### [training](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/training):
-- #### train.py 
-    Source Location: edited from ~/flow/examples\
-    This file contains training hyperparameters (such as Neural Network configurations, learning rate, etc)  and spawns a training session for an experiment.
-
-- #### [utils](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/utils):
-- ####  traffic_light_utils.py 
-    Source Location: edited from ~/flow/flow/core\
-    This file contains helper functions that are imported and used in the benchmark classes and environment classes.
-
-## Visualizing trained RL policies
-In order to visualize the policies, from the ~/flowdirectory, run:
-```shell 
-    python flow/visualize/visualizer_rllib.py --result_dir "result_dir here" --checkpoint_num "checkpoint_num here"
-```
-where ```shell checkpoint_num here``` and ```shell result_dir here``` correspond to the checkpoint number we are trying to visualize and the directory containing the trained policy respectively.
+In order to visualize the policies, 
 
