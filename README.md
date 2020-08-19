@@ -46,20 +46,22 @@ In your root directory, run:
    ```
 
 To visualize tensorboard logging while training, run:
-     ```shell
-        tensorboard --logdir=~/ray_results/
-     ```
+     
+```shell
+    tensorboard --logdir=~/ray_results/
+```
 
 When training is finished, to visualize policy, run:
-    ```shell
-       python flow/visualize/visualizer_rllib.py --result_dir "result_dir here" --checkpoint_num "checkpoint_num here"
-     ```
+    
+```shell
+    python flow/visualize/visualizer_rllib.py --result_dir "result_dir here" --checkpoint_num "checkpoint_num here"
+```
 where ```checkpoint_num here``` and ```result_dir here ``` correspond to the checkpoint number we are trying to visualize and the directory containing the trained policy respectively(found in ```~/ray_results ```). 
 
 To run a non-rl simulation (no training), run:
-    ```shell
-       python examples/simulate.py --exp_config grid_simulation_non_rl
-    ```
+```shell
+    python examples/simulate.py --exp_config grid_simulation_non_rl
+```
 
 #  Detailed Description of Files and Functionality
 ## In the root directory:
