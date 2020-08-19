@@ -19,7 +19,7 @@ In the project, we are implement two Traffic Light Optimization Baenchmarks:
 In order to begin implementing the code, the user needs to install FLOW in their home directory (user root directory). Please follow the instructions provided in (https://github.com/flow-project/flow) to install and begin using FLOW.
 The instructions will guide the user to install SUMO and rllib which are important pieces of the project too.\
 
-After installing FLOW, ensure the "spacetime-sim-2020" repo is cloned in the home directory (user root directory) too by running:
+After installing FLOW, ensure the ["spacetime-sim-2020"](https://github.com/googleinterns/spacetime-sim-2020.git) repo is cloned in the home directory (user root directory) too by running:
    ```shell
         git clone https://github.com/googleinterns/spacetime-sim-2020.git
    ```
