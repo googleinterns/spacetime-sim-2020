@@ -50,7 +50,7 @@ To run a non-rl simulation (no training), run:
        python examples/simulate.py --exp_config grid_simulation_non_rl
     ```
 
-#  Detailed Description of Files and Functionality + How to Run
+#  Detailed Description of Files and Functionality
 ## In the root directory:
 - ####  copy_to_dir.sh
    This is scripts copies all the necessary files/code from FLOW source code into Gilbert_code in order to keep track of the changes made.
