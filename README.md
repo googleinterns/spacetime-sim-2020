@@ -18,7 +18,11 @@ In the project, we are implement two Traffic Light Optimization Baenchmarks:
 # Installation
 In order to begin implementing the code, the user needs to install FLOW in their home directory (user root directory). Please follow the instructions provided in (https://github.com/flow-project/flow) to install and begin using FLOW.
 The instructions will guide the user to install SUMO and rllib which are important pieces of the project too.\
-Ensure the "spacetime-sim-2020" repo is cloned in the home directory (user root directory) too.
+
+After installing FLOW, ensure the "spacetime-sim-2020" repo is cloned in the home directory (user root directory) too by running:
+   ```shell
+        git clone https://github.com/googleinterns/spacetime-sim-2020.git
+   ```
 
 # Files in this Repo
 The files located in the directory Gilbert_code correspond to the edited files from the FLOW source code needed to implement our traffic light optimization methods and experiment. These files are located in different places within the FLOW source code.
@@ -28,7 +32,6 @@ This is a summarized guide on on to use this repo and run it's files (ensure you
 
 In your root directory, run:
    ```shell
-        git clone https://github.com/googleinterns/spacetime-sim-2020.git
         sh spacetime-sim-2020/copy_from_dir.sh
         cd flow
         python examples/train.py --exp_config grid_rl_centralized
@@ -69,6 +72,6 @@ To run a non-rl simulation (no training), run:
    - #### [utils](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/utils)
 
 ## Important Info about Visualizing trained RL policies:
-After training, if ``` "tls=tl_logic" ``` was passed into into ``` flow_params ``` when training, ensure that this command is renamed or removed in ``` ~/ray_results/../../params.json``` of the trained policy. \
+After training, if ``` "tls=tl_logic" ``` was passed into into ``` flow_params ``` in the configuration files at teh start of the training session, ensure that this command is renamed or removed in ``` ~/ray_results/../../params.json``` of the trained policy. \
    - This will ensure any SUMO default actions are NOT performed. (ie. all actions being visualized are purely from the trained agent).
 
