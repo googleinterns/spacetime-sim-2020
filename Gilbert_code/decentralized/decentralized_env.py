@@ -153,7 +153,7 @@ class DeCentralizedGridEnv(CentralizedGridEnv, MultiTrafficLightGridPOEnv):
         # non reward required.
         if rl_actions is None:
             return {}
-        rews = {}
+        reward = {}
 
         # collect required iterable for rl_actions and rl_ids
         rl_ids = self.k.traffic_light.get_ids()
@@ -166,9 +166,9 @@ class DeCentralizedGridEnv(CentralizedGridEnv, MultiTrafficLightGridPOEnv):
 
         # compute rewards for each rl_id
         for rl_id, rl_action in rl_id_action_dict:
-            rews[rl_id] = self.benchmark.compute_reward(self.step_counter, rl_id)
+            reward[rl_id] = self.benchmark.compute_reward(self.step_counter, rl_id)
 
-        return rews
+        return reward
 
     def _apply_rl_actions(self, rl_actions):
         """Specify the actions to be performed by the rl agent(s).

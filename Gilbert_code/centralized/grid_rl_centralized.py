@@ -160,7 +160,7 @@ flow_params = dict(
             "tl_type": "actuated",
             "num_local_edges": 4,
             "num_local_lights": 4,
-            "benchmark": "PressureLightGridEnv",  # This should be the string name of the benchmark class
+            "benchmark": "ThesisLightGridEnv",  # This should be the string name of the benchmark class
             "benchmark_params": "BenchmarkParams"
         }
     ),

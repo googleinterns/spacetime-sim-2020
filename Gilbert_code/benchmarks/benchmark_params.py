@@ -42,7 +42,7 @@ class BenchmarkParams:
         # saving flag, file location and name of histogram of results
         # plot and save histogram of travel time distribution at end of simulation
         self.save_plots = False
-        self.experiment_title = "1x1_Centralized_Pressure"
+        self.experiment_title = "1x1_Centralized_Thesis"
         hist_dir = root_dir + '/ray_results/histograms'
         self.full_histogram_path = ensure_dir(hist_dir) + "/" + self.experiment_title
 
@@ -50,7 +50,7 @@ class BenchmarkParams:
         self.log_rewards_during_iteration = False
 
         # activate sumo actuated baseline during training for first 6 iterations
-        self.sumo_actuated_baseline = True
+        self.sumo_actuated_baseline = False
         self.sumo_actuated_simulations = 6
 
         # choose grid type for naming the tensorboard directory logging
@@ -60,7 +60,7 @@ class BenchmarkParams:
         # choose exp running, can either be "rl" or "non_rl"
         self.exp = "rl"
         # choose look-ahead distance can be either 43, 80, 160 or 240
-        self.look_ahead = 43
+        self.look_ahead = 240
 
         # log title for tensorboard and name + file path for simulation log
         self.log_title = '/simulation_analysis_{}_{}_{}'.format(self.exp, self.look_ahead, self.grid_demand)

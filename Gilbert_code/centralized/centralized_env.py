@@ -102,7 +102,7 @@ class CentralizedGridEnv(TrafficLightGridPOEnv):
 
         self.action_dict = dict()
         self.rew_list = []
-        self.yellow_phase_duration = env_params.additional_params["yellow_phase_duration"]
+        self.yellow_phase_duration = 4 # env_params.additional_params["yellow_phase_duration"]
 
     def compute_reward(self, rl_actions, **kwargs):
 
@@ -122,16 +122,16 @@ class CentralizedGridEnv(TrafficLightGridPOEnv):
         reward : float
         """
         rl_ids = self.k.traffic_light.get_ids()
-        rews = {}
+        reward = {}
 
         # if no rl_action, SUMO default (either actuated or fixed) is executed. reward is computed.
         if rl_actions is None:
             for rl_id in rl_ids:
-                rews[rl_id] = self.benchmark.compute_reward(self.step_counter, rl_id)
+                reward[rl_id] = self.benchmark.compute_reward(self.step_counter, rl_id)
 
             # add all rewards for each traffic light
-            final_rew = sum(list(rews.values()))
-            return final_rew
+            final_reward = sum(list(reward.values()))
+            return final_reward
 
         # collect required iterable for rl_actions and rl_ids
         if not self.action_dict:
@@ -143,11 +143,11 @@ class CentralizedGridEnv(TrafficLightGridPOEnv):
 
         # compute rewards for each rl_id
         for rl_id, rl_action in rl_id_action_dict:
-            rews[rl_id] = self.benchmark.compute_reward(self.step_counter, rl_id)
+            reward[rl_id] = self.benchmark.compute_reward(self.step_counter, rl_id)
 
         # add all rewards for each traffic light
-        final_rew = sum(list(rews.values()))
-        return final_rew
+        final_reward = sum(list(reward.values()))
+        return final_reward
 
     def get_state(self):
         """Return the state of the simulation as perceived by the RL agent.

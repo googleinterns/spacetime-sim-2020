@@ -149,7 +149,7 @@ class PressureLightGridEnv:
            ie. compute the total sum for all pressure values for an edge pair
 
            Note: Because we are minimizing pressure, we take the negate it in order to maximize reward
-                max(rew) = max(-pressure) = min (pressure)
+                max(reward) = max(-pressure) = min (pressure)
 
         Parameters:
         -----------
@@ -165,5 +165,5 @@ class PressureLightGridEnv:
             negative of the pressure values
         """
 
-        rew = -sum(self.edge_pressure_dict[rl_id])
-        return rew
+        reward = -sum(self.edge_pressure_dict[rl_id])
+        return reward

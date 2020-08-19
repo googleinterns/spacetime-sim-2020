@@ -6,6 +6,7 @@
     and observation space of the defined benchmark
 """
 import numpy as np
+import math
 from flow.core.traffic_light_utils import get_light_states, \
     get_observed_ids, get_edge_params, get_internal_edges, get_outgoing_edge
 
@@ -229,31 +230,23 @@ class ThesisLightGridEnv:
         else:
             self.num_of_switch_actions[rl_id] = self.num_of_switch_actions[rl_id][1:] + [changed]
 
-        rews = - (0.1 * sum(self.num_of_switch_actions[rl_id]) +
+        reward = - (0.1 * sum(self.num_of_switch_actions[rl_id]) +
                   0.2 * self.num_of_emergency_stops[rl_id] +
                   0.3 * self.delays[rl_id] +
                   0.3 * self.waiting_times[rl_id] / 60
                   )
 
-        return rews
+        return reward
 
     def get_cars_inscope(self):
         """"compute the maximum number of vehicles that can be observed given the look ahead distance
         Returns: int
             number of vehicles that can be observed"""
-        cars_in_scope = 0
-        if self.benchmark_params.look_ahead == 43:
-            cars_in_scope = 24
 
-            # elif look_ahead == 80:
-            #     cars_in_scope = """TODO"""
-            #     obs_shape = (124 * 3 + 10) * self.num_traffic_lights
-            #
-            # elif look_ahead == 160:
-            #     cars_in_scope = """TODO"""
-            #     obs_shape = ("""TODO""" * 3 + 10) * self.num_traffic_lights
+        vehicle_length = 5
+        cars_in_scope_single_lane = math.floor(self.benchmark_params.look_ahead / vehicle_length)
 
-        elif self.benchmark_params.look_ahead == 240:
-            cars_in_scope = 124
+        # multiply by number of lanes at local intersection
+        cars_in_scope = cars_in_scope_single_lane * 4
 
         return cars_in_scope
