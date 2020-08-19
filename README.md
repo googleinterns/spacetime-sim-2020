@@ -43,7 +43,7 @@ When training is finished, to visualize policy, run:
     ```shell
        python flow/visualize/visualizer_rllib.py --result_dir "result_dir here" --checkpoint_num "checkpoint_num here"
      ```
-where ```shell checkpoint_num here``` and ```shell result_dir here ``` correspond to the checkpoint number we are trying to visualize and the directory containing the trained policy respectively(found in ```shell ~/ray_results ```). 
+where ```checkpoint_num here``` and ```result_dir here ``` correspond to the checkpoint number we are trying to visualize and the directory containing the trained policy respectively(found in ```~/ray_results ```). 
 
 To run a non-rl simulation (no training), run:
     ```shell
@@ -69,7 +69,7 @@ To run a non-rl simulation (no training), run:
 - #### [utils](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/utils)
 
 ## Important Info about Visualizing trained RL policies:
-After training, if ```shell "tls=tl_logic" ``` was passed into into ```shell flow_params ``` when training, ensure that this command is renamed or removed in ```shell ~/ray_results/../../params.json``` of the trained policy.:
+After training, if ``` "tls=tl_logic" ``` was passed into into ``` flow_params ``` when training, ensure that this command is renamed or removed in ``` ~/ray_results/../../params.json``` of the trained policy. \
     - This will ensure any SUMO default actions are NOT performed. (ie. all actions being visualized are purely from the trained agent).
 
 In order to visualize the policies, 
