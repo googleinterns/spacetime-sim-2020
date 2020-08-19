@@ -72,6 +72,7 @@ To run a non-rl simulation (no training), run:
     This is scripts copies all the necessary files/code from Gilbert_code into into FLOW source code in order to run.
 
 ## In Gilbert_code directory:
+Each of the directory has a README file describing the codes and how to use.
 ### 1. [benchmarks](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/benchmarks)
 ### 2. [centralized](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/centralized)
 ### 3. [decentralized](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/decentralized)
