@@ -36,7 +36,7 @@ The files located in the directory Gilbert_code correspond to the files that int
 The above files overwrite FLOW's source code in order to ensure our experiments are able to run.
 
 # How to use example:
-This is a summarized guide on on to use this repo and run it's files (ensure your flow conda env is acticvated by running:  ```shell conda activate flow```).
+This is a summarized guide on on to use this repo and run it's files (ensure your flow conda env is acticvated by running:  ```conda activate flow```).
 
 In your root directory, run:
    ```shell
