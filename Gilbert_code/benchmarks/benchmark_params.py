@@ -60,7 +60,7 @@ class BenchmarkParams:
         # choose exp running, can either be "rl" or "non_rl"
         self.exp = "rl"
         # choose look-ahead distance can be either 43, 80, 160 or 240
-        self.look_ahead = 240
+        self.look_ahead = 43
 
         # log title for tensorboard and name + file path for simulation log
         self.log_title = '/simulation_analysis_{}_{}_{}'.format(self.exp, self.look_ahead, self.grid_demand)

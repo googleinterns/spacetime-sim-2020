@@ -26,3 +26,6 @@ cp ~/flow/examples/train.py Gilbert_code/utils_and_source_code_edits/training/
 
 #changes added
 cp ~/flow/flow/core/traffic_light_utils.py Gilbert_code/utils_and_source_code_edits/utils
+
+#tests
+cp ~/flow/tests/fast_tests/test_traffic_light_grid.py Gilbert_code/tests
