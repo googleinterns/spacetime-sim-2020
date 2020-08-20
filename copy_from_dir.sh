@@ -30,4 +30,4 @@ cp Gilbert_code/utils_and_source_code_edits/utils/traffic_light_utils.py  ~/flow
 
 
 #tests
-cp Gilbert_code/tests/test_traffic_light_grid.py  ~/flow/tests/fast_tests/
+cp Gilbert_code/tests/traffic_light_utils_tests.py  ~/flow/tests/
