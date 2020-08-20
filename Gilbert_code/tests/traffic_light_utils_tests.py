@@ -18,7 +18,7 @@ Consider a network with the following configuration with the following edges:
                             |
                             
                             
- Distances/Measurements from the center of a node in the xy defined as follows                       
+ Distances/Measurements from the center of a node in the x y direction in meters defined as follows                       
                             0
                             |
                             |
