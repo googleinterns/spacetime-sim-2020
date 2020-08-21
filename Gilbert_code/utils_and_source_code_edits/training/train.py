@@ -145,6 +145,7 @@ def setup_exps_rllib(flow_params,
 
     horizon = flow_params['env'].horizon
 
+    # . **** Gilbert modified source code ###
     alg_run = "DQN"
 
     agent_cls = get_agent_class(alg_run)
@@ -165,6 +166,8 @@ def setup_exps_rllib(flow_params,
     # config["lambda"] = 0.97
     # config["kl_target"] = 0.02
     # config["num_sgd_iter"] = 10
+
+    # . **** Gilbert modified source code  above ###
 
     # save the flow params for replay
     flow_json = json.dumps(

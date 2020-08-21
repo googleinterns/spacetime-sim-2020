@@ -21,9 +21,6 @@ def _flow(name, vtype, route, **kwargs):
     return E('flow', id=name, route=route, type=vtype, **kwargs)
 
 
-def _human_inflow(name, vtype, route, **kwargs):
-    return E('vehicle', id=name, route=route, type=vtype, **kwargs)
-
 
 def _inputs(net=None, rou=None, add=None, gui=None):
     inp = E("input")
@@ -750,12 +747,16 @@ class TraCIKernelNetwork(BaseKernelNetwork):
             # in this case, we only have one route, convert into into a
             # list of routes with one element
 
-            ### Gilbert edited code: ###
+            # . **** Gilbert modified source code###
+            # flow is generating empty list for outgoing edges as routes.
+            # we need to find a better way to correct this
+
             try:
                 if isinstance(routes[route_id][0], str):
                     routes[route_id] = [(routes[route_id], 1)]
             except:
                 pass
+            # . **** Gilbert modified source code  above ###
 
             # add each route incrementally, and add a second term to denote
             # the route number of the given route at the given edge
@@ -802,16 +803,6 @@ class TraCIKernelNetwork(BaseKernelNetwork):
                         routes_data.append(_flow(**sumo_inflow))
                 else:
                     routes_data.append(_flow(**sumo_inflow))
-
-        # ##### Gilbert code below:
-        # # create dict demand file
-        # sorted_ids, vehicle_str = generate_demands(segment_id_pairs=route_list, network_name=self.network.name, horizon=3600, is_uniform=True, num_of_vehicles=1440)
-        # #
-        # for entry in sorted_ids:
-        #     # append to existing dict
-        #     routes_data.append(_human_inflow(**vehicle_str[entry]))
-        #
-        # ##### Gilbert code above:
 
         # export to xml
         printxml(routes_data, self.cfg_path + self.roufn)

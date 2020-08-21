@@ -45,7 +45,7 @@ class PressureLightGridEnv:
             space is described in the get_state method
         """
 
-        obs_shape = 14
+        obs_shape = 10
         return obs_shape
 
     def get_state(self,
@@ -134,11 +134,11 @@ class PressureLightGridEnv:
 
         # for each  intersection, collect traffic light state
         light_states_ = get_light_states(kernel, rl_id)
-
+        rl_num = int(rl_id.split("center")[1])
         observation = np.array(np.concatenate(
             [self.edge_pressure_dict[rl_id],
              local_edge_numbers,
-             direction[local_id_nums],
+             [direction[rl_num]],
              light_states_
              ]))
 

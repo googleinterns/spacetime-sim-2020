@@ -34,6 +34,7 @@ class ThesisLightGridEnv:
         self.edge_pressure_dict = dict()
         self.waiting_times = dict()
         self.exp_type = None
+        self.num_local_lanes = 4
 
     def obs_shape_func(self):
         """Define the shape of the observation space for the Masters Thesis benchmark
@@ -46,7 +47,7 @@ class ThesisLightGridEnv:
         """
 
         cars_in_scope = self.get_cars_inscope()
-        obs_shape = (cars_in_scope * 3 + 10)
+        obs_shape = (cars_in_scope * 3 + 6)
 
         return obs_shape
 
@@ -175,12 +176,14 @@ class ThesisLightGridEnv:
         self.num_of_emergency_stops[rl_id] = num_of_emergency_stops
         self.delays[rl_id] = delays
 
+        # collect value of of node
+        rl_num = int(rl_id.split("center")[1])
         observation = np.array(np.concatenate(
             [veh_positions,
              relative_speeds,
              accelerations,
              local_edge_numbers,
-             direction[local_id_nums],
+             [direction[rl_num]],
              light_states_id,
              ]))
 
@@ -247,6 +250,6 @@ class ThesisLightGridEnv:
         cars_in_scope_single_lane = math.floor(self.benchmark_params.look_ahead / vehicle_length)
 
         # multiply by number of lanes at local intersection
-        cars_in_scope = cars_in_scope_single_lane * 4
+        cars_in_scope = cars_in_scope_single_lane * self.num_local_lanes  # 4 lanes
 
         return cars_in_scope

@@ -19,15 +19,15 @@ Consider a network with the following configuration with the following edges:
                             
                             
  Distances/Measurements from the center of a node in the x y direction in meters defined as follows                       
-                            0
-                            |
-                            |
-                            |
-                            |
-                            |
                            240
+                            |
+                            |
+                            |
+                            |
+                            |
+                            0
                             __
-       >0 ---------240 |  center | 0 -------------240>
+       >240 ---------0 |  center | 0 -------------240>
                             __
                             0
                             |
@@ -55,14 +55,15 @@ The positions of specified vehicle in meters:
 
                             |
                             |
-                           200
+                           40
                             |
                             |
-        -> ---------200-----|---50----99---->     
+        -> ----------40-----|---50----99---->
                             |
                             |
-                           200  
+                           40
                             |
+
 
 The speeds, accelerations, waiting time, of specified vehicles:
 
@@ -205,18 +206,81 @@ class Vehicle:
             return ["veh_4"]
 
     def get_position(self, id):
-        """Return position on edge for specified vehicle"""
+        """Return position on edge for specified vehicle
+
+
+            Note: SUMO's geometry is structured in the manner below;
+
+                            0
+                            |
+                            |
+                            |
+                            |
+                            |
+                           240
+                            __
+       >0 ---------240 |  center | 0 -------------240>
+                            __
+                            0
+                            |
+                            |
+                            |
+                            |
+                            |
+                           240
+
+        Therefore, to get the actual position of the vehicles, we need to subtract the relative distance
+        for some vehicles to the node from the total distance of the edge:
+        ie: Nothboud and Westbound
+
+        Therefore;          |
+                            |
+                           40
+                            |
+                            |
+        -> ----------40-----|---50----99---->
+                            |
+                            |
+                           40
+                            |
+
+        ends up being;
+                            |
+                            |
+                        240 - 40 = 200
+                            |
+                            |
+        -> --240 - 40 = 200-----|---50----99---->
+                            |
+                            |
+                        240 - 40 = 200
+                            |
+
+          and thus, finally;
+                            |
+                            |
+                           200
+                            |
+                            |
+        -> ---------200-----|---50----99---->
+                            |
+                            |
+                           200
+                            |
+
+
+        """
 
         if id == "veh_1":
             return 50
         elif id == "veh_2":
             return 99
         elif id == "veh_3":
-            return 200
+            return 240-40
         elif id == "veh_4":
-            return 200
+            return 240-40
         elif id == "veh_5":
-            return 200
+            return 240-40
 
     def get_edge(self, id):
         """Return edge where specified vehicle is located"""
@@ -376,7 +440,7 @@ class TestEnv(unittest.TestCase):
 
     def test_get_state_pressure(self):
         """Tests get_state method for pressure benchmark
-        direction = array => [current node,
+        direction = array => [current node,   "center0"
                             top adjacent node,
                             bottom adjacent node,
                             left adjacent node,
@@ -392,23 +456,32 @@ class TestEnv(unittest.TestCase):
 
         see: flow/envs/traffic_light_grid.py
 
+
+        There are two pressures for each of the two incoming segments.
+        The first pressure is on E-W direction. There is 1 incoming and 2 outgoing vehicles
+        within the look-ahead distance, so the pressure is 1 - 2 = -1
+
+       The second pressure is N-W direction. There is 1 incoming and 0 vehicles within the look-ahead distance,
+       thus the total pressure is 1-0=1
+
+       Thus, the reward = -sum(pressure) =  -(-1+1) = 0
+
         [self.edge_pressure_dict[rl_id], = [1-2 ,1]
         local_edge_numbers, = [0,2]
-        direction[local_id_nums], [0,0,0,0,0] FIXME: correct to rl_id
+        direction[rl_id], [0]
         light_states_= [1]
         ]))
         """
         expected_value = np.array([-1, 1,  # pressure for observed vehicles on edges
                                    0, 2,  # index of nodes with vehicles in node list (Network.get_edge_list)
-                                   0, 0, 0, 0, 0,  # current and adjacent nodes direction
-                                                   # (Note we have no adjacent nodes)
+                                   0,  # current node direction
                                    1])  # traffic light states GrGr
 
         experiment = PressureLightGridEnv(BenchmarkParams())
         observation = experiment.get_state(kernel=self.kernel_,
                                            network=self.kernel_.network,
                                            _get_relative_node=self.kernel_.get_relative_node,
-                                           direction=np.array([0, 0, 0, 0, 0]),
+                                           direction=np.array([0]),
                                            step_counter=1,
                                            rl_id="center0")
 
@@ -431,29 +504,43 @@ class TestEnv(unittest.TestCase):
         self.assertEquals(reward, expected_value)
 
     def test_get_state_thesis(self):
-        """Tests get_state method for thesis benchmark"""
+        """Tests get_state method for thesis benchmark
 
-        # 40 is the number of vehicles that can be observed given the look ahead distance of 100
-        # see flow.envs.thesis.ThesisLightGridEnv.get_cars_inscope
+        Considering vehicle length = 5m, look-ahead = 100m
+        cars in scope = math.floor(100 / 5) x 2 lanes = 40
 
-        # cars_in_scope_single_lane = math.floor(100 / 5)
-        # considering vehicle length = 5m,
+        40 is the number of vehicles that can be observed given the look ahead distance of 100.
+        To keep the observation space static, we set unobserved vehicle values as zeros (placeholders)
+
+        In this example, only incoming two vehicles are observed in the NS and EW directions
+        ie. veh_3 and veh_4
+
+        """
+
+        # placeholders
         veh_positions = np.zeros(40)
         relative_speeds = np.zeros(40)
         accelerations = np.zeros(40)
+
+        # [200, 200, 0, 0....] position for observed first two observed vehicles,
+        # 0 (placeholders) for all non observed vehicles
         veh_positions[0:2] = 200
+
+        # observed relative speeds for each observed vehicle (speed/max_speed)
         relative_speeds[0:2] = [15 / 26, 20 / 26]
+
+        # observed accelarations for each observed vehicle
         accelerations[0:2] = [2, 3]
         expected_value = np.array(np.concatenate(
             [veh_positions,
              relative_speeds,
              accelerations,
-             [0, 2],
-             [0, 0, 0, 0, 0],
-             [1],
-             ]))
+             [0, 2],  # index of nodes with vehicles in node list (Network.get_edge_list)
+             [0],  # current node direction
+             [1]]))  # traffic light states GrGr
 
         experiment = ThesisLightGridEnv(BenchmarkParams())
+        experiment.num_local_lanes = 2  # local lanes
         observation = experiment.get_state(kernel=self.kernel_,
                                            network=self.kernel_.network,
                                            _get_relative_node=self.kernel_.get_relative_node,
@@ -465,8 +552,11 @@ class TestEnv(unittest.TestCase):
     def test_compute_reward_thesis(self):
         """Tests compute_reward method for thesis benchmark"""
 
+        # 4 secs + 3 secs for observed incoming vehicles
         waiting_times = 7
         num_of_emergency_stops = 0
+
+        # sum (maximum allowable speed - current speed) for all observed vehicles
         delays = 30 - 15 + 30 - 20
         expected_reward = - (0.1 * 0 +
                              0.2 * num_of_emergency_stops +
