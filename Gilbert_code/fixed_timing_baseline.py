@@ -249,8 +249,8 @@ if __name__ == "__main__":
             # cycle_length = 108
 
             # set green time
-            # green_times = np.arange(4, cycle_length-12)
-            green_times = np.arange(34, 35)
+            green_times = np.arange(4, cycle_length-12)
+            # green_times = np.arange(34, 35)
             # demand = "H"
             # set sumo
             # if demand == "L":
