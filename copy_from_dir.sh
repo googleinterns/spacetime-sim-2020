@@ -23,7 +23,9 @@ cp Gilbert_code/decentralized/grid_rl_decentralized.py ~/flow/examples/exp_confi
 
 #utils and source_code_edits
 cp Gilbert_code/utils_and_source_code_edits/simulation/traci.py ~/flow/flow/core/kernel/simulation/
+cp Gilbert_code/utils_and_source_code_edits/network/traci.py ~/flow/flow/core/kernel/network/
 cp Gilbert_code/utils_and_source_code_edits/training/train.py ~/flow/examples/
+
 
 #changes added
 cp Gilbert_code/utils_and_source_code_edits/utils/traffic_light_utils.py  ~/flow/flow/core

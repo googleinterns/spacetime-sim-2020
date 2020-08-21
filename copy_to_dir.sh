@@ -22,6 +22,7 @@ cp ~/flow/examples/exp_configs/rl/multiagent/grid_rl_decentralized.py Gilbert_co
 
 #utils and source_code_edits
 cp ~/flow/flow/core/kernel/simulation/traci.py Gilbert_code/utils_and_source_code_edits/simulation/
+cp ~/flow/flow/core/kernel/network/traci.py  Gilbert_code/utils_and_source_code_edits/network
 cp ~/flow/examples/train.py Gilbert_code/utils_and_source_code_edits/training/
 
 #changes added

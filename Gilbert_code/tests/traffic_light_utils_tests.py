@@ -247,14 +247,67 @@ class Kernel:
     traffic_light = Trafficlight()
     vehicle = Vehicle()
     kernel_api = kernel_api()
+    rows = 1
+    cols = 1
 
-    def get_relative_node(self, rl_id, str):
-        """Return value of node:
-        ie. "center0" = 0
-            "center1" = 1
+    def get_relative_node(self, agent_id, direction):
+
+        """code implementation is found in
+            flow/flow/envs/traffic_light_grid.py
+
+        Yield node number of traffic light agent in a given direction.
+
+        For example, the nodes in a traffic light grid with 2 rows and 3
+        columns are indexed as follows:
+
+            |     |     |
+        --- 3 --- 4 --- 5 ---
+            |     |     |
+        --- 0 --- 1 --- 2 ---
+            |     |     |
+
+        See flow.networks.traffic_light_grid for more information.
+
+        Example of function usage:
+        - Seeking the "top" direction to ":center0" would return 3.
+        - Seeking the "bottom" direction to ":center0" would return -1.
+
+        Parameters
+        ----------
+        agent_id : str
+            agent id of the form ":center#"
+        direction : str
+            top, bottom, left, right
+
+        Returns
+        -------
+        int
+            node number
         """
+        ID_IDX = 1
+        agent_id_num = int(agent_id.split("center")[ID_IDX])
+        if direction == "top":
+            node = agent_id_num + self.cols
+            if node >= self.cols * self.rows:
+                node = -1
+        elif direction == "bottom":
+            node = agent_id_num - self.cols
+            if node < 0:
+                node = -1
+        elif direction == "left":
+            if agent_id_num % self.cols == 0:
+                node = -1
+            else:
+                node = agent_id_num - 1
+        elif direction == "right":
+            if agent_id_num % self.cols == self.cols - 1:
+                node = -1
+            else:
+                node = agent_id_num + 1
+        else:
+            raise NotImplementedError
 
-        return 0
+        return node
 
 
 class TestEnv(unittest.TestCase):
@@ -299,9 +352,18 @@ class TestEnv(unittest.TestCase):
 
     def test_get_edge_params(self):
         """Tests get_edge_params method"""
+
+        # edges observed vehicles
         expected_value1 = ["route1", "route2"]
+
+        # index of nodes in node list (Network.get_edge_list)
         expected_value2 = [0, 2]
-        expected_value3 = [0, 0, 0, 0, 0]
+
+        # node_ids: center0 = 0, center2 = 2
+        # [node_id, adjacent nodes ..]
+        # [center0, top node, bottom node, left node, right node]
+        # [0, -1, -1, -1, -1] = if there's no adjacent node, return -1
+        expected_value3 = [0, -1, -1, -1, -1]
 
         incoming_edges, local_edge_numbers, local_id_nums = \
             get_edge_params(rl_id="center0",
@@ -314,20 +376,39 @@ class TestEnv(unittest.TestCase):
 
     def test_get_state_pressure(self):
         """Tests get_state method for pressure benchmark
+        direction = array => [current node,
+                            top adjacent node,
+                            bottom adjacent node,
+                            left adjacent node,
+                            right adjacent node]
+        Note: each value 0 if cars are flowing in the NS direction and 0 if flowing in the EW direction
+                current node is GrGr therefore = 0
 
-        [self.edge_pressure_dict[rl_id], = [2-1 ,1]
+             Note that we have no adjacent nodes so all adjacent nodes default to 0:
+                top and bottom node direction = 0
+                left and right node direction = 0
+
+
+
+        see: flow/envs/traffic_light_grid.py
+
+        [self.edge_pressure_dict[rl_id], = [1-2 ,1]
         local_edge_numbers, = [0,2]
-        direction[local_id_nums], [ 0,0,0,0,0]
+        direction[local_id_nums], [0,0,0,0,0] FIXME: correct to rl_id
         light_states_= [1]
         ]))
         """
-        expected_value = np.array([-1, 1, 0, 2, 0, 0, 0, 0, 0, 1])
+        expected_value = np.array([-1, 1,  # pressure for observed vehicles on edges
+                                   0, 2,  # index of nodes with vehicles in node list (Network.get_edge_list)
+                                   0, 0, 0, 0, 0,  # current and adjacent nodes direction
+                                                   # (Note we have no adjacent nodes)
+                                   1])  # traffic light states GrGr
 
         experiment = PressureLightGridEnv(BenchmarkParams())
         observation = experiment.get_state(kernel=self.kernel_,
                                            network=self.kernel_.network,
                                            _get_relative_node=self.kernel_.get_relative_node,
-                                           direction=np.array([0]),
+                                           direction=np.array([0, 0, 0, 0, 0]),
                                            step_counter=1,
                                            rl_id="center0")
 
@@ -335,6 +416,8 @@ class TestEnv(unittest.TestCase):
 
     def test_compute_reward_pressure(self):
         """Tests compute_reward method for pressure benchmark"""
+
+        # total pressure (-1+1) = 0
         expected_value = 0
 
         experiment = PressureLightGridEnv(BenchmarkParams())
@@ -350,9 +433,14 @@ class TestEnv(unittest.TestCase):
     def test_get_state_thesis(self):
         """Tests get_state method for thesis benchmark"""
 
-        veh_positions = np.zeros(80)
-        relative_speeds = np.zeros(80)
-        accelerations = np.zeros(80)
+        # 40 is the number of vehicles that can be observed given the look ahead distance of 100
+        # see flow.envs.thesis.ThesisLightGridEnv.get_cars_inscope
+
+        # cars_in_scope_single_lane = math.floor(100 / 5)
+        # considering vehicle length = 5m,
+        veh_positions = np.zeros(40)
+        relative_speeds = np.zeros(40)
+        accelerations = np.zeros(40)
         veh_positions[0:2] = 200
         relative_speeds[0:2] = [15 / 26, 20 / 26]
         accelerations[0:2] = [2, 3]
