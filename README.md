@@ -80,6 +80,7 @@ Each of the directory has a README file describing the codes and how to use.
 ### 5. [multi_agent](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/multi_agent)
 ### 6. [tests](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/tests)
 ### 7. [utils_and_source_code_edits](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits)
+   - #### [network](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/network)
    - #### [simulation](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/simulation)
    - #### [training](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/training)
    - #### [utils](https://github.com/googleinterns/spacetime-sim-2020/tree/master/Gilbert_code/utils_and_source_code_edits/utils)
@@ -87,4 +88,20 @@ Each of the directory has a README file describing the codes and how to use.
 ## Important Info about visualizing trained RL policies:
 After training, if ``` "tls=tl_logic" ``` was passed into into ``` flow_params ``` in the configuration files at teh start of the training session, ensure that this command is renamed or removed in ``` ~/ray_results/../../params.json``` of the trained policy. \
    - This will ensure any SUMO default actions are NOT performed. (ie. all actions being visualized are purely from the trained agent).
+   
+### Step by step guide to modify params.json file for visualization
+
+1. Edit ~/ray_results/AAA/BBB/params.json\
+    Where:\
+          AAA is the exp_tag of directory produced when training begins (exp_tag can be found in configuration file flow_params - see example [here](https://github.com/googleinterns/spacetime-sim-2020/blob/master/Gilbert_code/centralized/grid_rl_centralized.py)\
+          BBB is unique experiment ID produced when training in begins
+
+    example: ~/ray_results/1x1_CENTRALIZED_Thesis/DQN_CentralizedGridEnv-v0_7c2d21c8_2020-08-17_22-46-27x1wqmutp/params.json
+
+2. Search for the line "tls": { "_TrafficLightParams__tls_properties": {"center0": {.......................
+
+3. [EASIER] Change the name to "tls" to something thing eg. "tls_changed" or 
+   [PREFERABLE] delete the entire "tls:{....}" input Key, Value pair)
+   
+   This ensures the parameter "tls" is not detected by the simulator.
 
