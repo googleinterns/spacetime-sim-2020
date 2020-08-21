@@ -93,7 +93,7 @@ After training, if ``` "tls=tl_logic" ``` was passed into into ``` flow_params `
 
 1. Edit ~/ray_results/AAA/BBB/params.json \
     Where: 
-      - AAA is the exp_tag of directory produced when training begins (exp_tag can be found in configuration file flow_params - see example [here](https://github.com/googleinterns/spacetime-sim-2020/blob/master/Gilbert_code/centralized/grid_rl_centralized.py) 
+      - AAA is the exp_tag of directory produced when training begins (exp_tag can be found in configuration file flow_params - see example [here](https://github.com/googleinterns/spacetime-sim-2020/blob/master/Gilbert_code/centralized/grid_rl_centralized.py))
       - BBB is unique experiment ID produced when training in begins
 
     example: ~/ray_results/1x1_CENTRALIZED_Thesis/DQN_CentralizedGridEnv-v0_7c2d21c8_2020-08-17_22-46-27x1wqmutp/params.json
